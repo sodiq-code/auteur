@@ -1,0 +1,45 @@
+{
+  "logline": "An 1892 Scottish lighthouse keeper discovers a message in a bottle that changes his life.",
+  "character": {
+    "name": "Angus MacFie",
+    "age": 52,
+    "description": "A weathered, solitary man whose life is dictated by the clockwork precision of the light and the isolation of the sea.",
+    "voice": "Gruff, sparse, with a thick Scottish brogue.",
+    "wardrobe": "Hand-waxed oilskin coat and hat over a heavy-knit wool sweater."
+  },
+  "location": {
+    "name": "Remote Scottish Lighthouse",
+    "description": "A towering stone structure battered by the North Sea, featuring a gleaming hyper-radial Fresnel lens powered by oil lamps and intricate clockwork mechanics.",
+    "era": "1892"
+  },
+  "style": {
+    "color_grade": "Desaturated, cold blues and greys contrasting with the warm amber glow of the oil lamp.",
+    "aspect_ratio": "16:9",
+    "mood": "Atmospheric, isolating, and hauntingly beautiful."
+  },
+  "shot_list": [
+    {
+      "id": 1,
+      "description": "Close-up of Angus's weathered hands winding the brass clockwork mechanism of the Fresnel lens.",
+      "bible_refs": "char:Angus;loc:lamp room"
+    },
+    {
+      "id": 2,
+      "description": "Wide shot of the lighthouse standing against a raging storm, waves crashing against the rocks.",
+      "bible_refs": "loc:exterior lighthouse"
+    },
+    {
+      "id": 3,
+      "description": "Medium shot of Angus walking the rocky shore in his oilskins, spotting a glass bottle washed up in the kelp.",
+      "bible_refs": "char:Angus;loc:shoreline"
+    }
+  ],
+  "citations": [
+    "https://www.mnhs.org/splitrock/learn/technology",
+    "https://en.wikipedia.org/wiki/Fresnel_lens",
+    "https://variety.com/2019/artisans/awards/robert-eggers-willem-dafoe-robert-pattinson-the-lighthouse-1203447497/",
+    "https://www.si.edu/object/fresnel-lighthouse-lens:nmah_844143",
+    "https://www.scotlandspeople.gov.uk/news-and-articles/our-records-shining-light-lives-lightkeepers",
+    "https://en.wikipedia.org/wiki/Lighthouse_keeper"
+  ]
+}

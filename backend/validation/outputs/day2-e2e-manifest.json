@@ -1,0 +1,132 @@
+{
+  "task": "End-to-end API validation (blueprint Section 32.2 / 50.3)",
+  "timestamp_utc": "2026-08-25T01:52:55.781499+00:00",
+  "logline": "An 1892 Scottish lighthouse keeper discovers a message in a bottle that changes his life.",
+  "project_id": "auteur-506523",
+  "regions": {
+    "veo_lyria": "us-central1",
+    "image_bible": "global"
+  },
+  "models": {
+    "parallel_search": "https://api.parallel.ai/v1/search",
+    "bible_synthesis": "gemini-3.1-pro-preview",
+    "image": "gemini-3-pro-image",
+    "veo": "veo-3.1-fast-generate-001",
+    "tts": "gemini-2.5-flash-tts",
+    "lyria": "lyria-002"
+  },
+  "budget": {
+    "usd": 1.0,
+    "latency_sec": 360
+  },
+  "steps": [
+    {
+      "name": "parallel_search",
+      "status": "ok",
+      "elapsed_sec": 2.04,
+      "cost_usd": 0.001,
+      "output_path": "/home/z/my-project/auteur/backend/validation/outputs/parallel_references.json",
+      "output_size_bytes": 5064,
+      "detail": {
+        "results_count": 9,
+        "search_id": "search_5d2286d75fa50eef99653e2c76901ab3"
+      },
+      "error": null
+    },
+    {
+      "name": "bible_synthesis",
+      "status": "ok",
+      "elapsed_sec": 19.59,
+      "cost_usd": 0.02,
+      "output_path": "/home/z/my-project/auteur/backend/validation/outputs/bible_v1.json",
+      "output_size_bytes": 2027,
+      "detail": {
+        "character": "Angus MacFie",
+        "location": "Remote Scottish Lighthouse",
+        "shots": 3,
+        "citations": 6
+      },
+      "error": null
+    },
+    {
+      "name": "character_image",
+      "status": "ok",
+      "elapsed_sec": 54.33,
+      "cost_usd": 0.02,
+      "output_path": "/home/z/my-project/auteur/backend/validation/outputs/e2e_character_reference.png",
+      "output_size_bytes": 1505008,
+      "detail": {},
+      "error": null
+    },
+    {
+      "name": "veo_clip",
+      "status": "ok",
+      "elapsed_sec": 31.74,
+      "cost_usd": 0.05,
+      "output_path": "/home/z/my-project/auteur/backend/validation/outputs/e2e_shot.mp4",
+      "output_size_bytes": 3865783,
+      "detail": {
+        "operation": "projects/auteur-506523/locations/us-central1/publishers/google/models/veo-3.1-fast-generate-001/operations/3cb73c03-7b6f-41dc-a9d4-3bfe62352bda"
+      },
+      "error": null
+    },
+    {
+      "name": "tts_voiceover",
+      "status": "ok",
+      "elapsed_sec": 7.21,
+      "cost_usd": 0.02,
+      "output_path": "/home/z/my-project/auteur/backend/validation/outputs/e2e_voiceover.wav",
+      "output_size_bytes": 449850,
+      "detail": {
+        "raw_mime": "audio/L16;codec=pcm;rate=24000",
+        "pcm_bytes": 449806
+      },
+      "error": null
+    },
+    {
+      "name": "lyria_score",
+      "status": "ok",
+      "elapsed_sec": 30.35,
+      "cost_usd": 0.03,
+      "output_path": "/home/z/my-project/auteur/backend/validation/outputs/e2e_score.wav",
+      "output_size_bytes": 6291544,
+      "detail": {},
+      "error": null
+    }
+  ],
+  "totals": {
+    "elapsed_sec": 148.19,
+    "cost_usd": 0.141,
+    "ok_count": 6,
+    "total_count": 6
+  },
+  "verification": {
+    "parallel_search": {
+      "valid": true
+    },
+    "bible_synthesis": {
+      "valid": true
+    },
+    "character_image": {
+      "valid": true,
+      "magic": "89504e470d0a1a0a"
+    },
+    "veo_clip": {
+      "valid": true,
+      "ffprobe": "codec_name=h264\nwidth=1280\nheight=720\nduration=8.000000"
+    },
+    "tts_voiceover": {
+      "valid": true,
+      "ffprobe": "codec_name=pcm_s16le\nsample_rate=24000\nchannels=1\nduration=9.370958"
+    },
+    "lyria_score": {
+      "valid": true,
+      "ffprobe": "codec_name=pcm_s16le\nsample_rate=48000\nchannels=2\nduration=32.768229"
+    }
+  },
+  "definition_of_done": {
+    "cost_under_1_usd": true,
+    "latency_under_6_min": true,
+    "all_5_apis_ok": true
+  }
+}
