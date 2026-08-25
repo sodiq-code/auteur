@@ -1,0 +1,33 @@
+# Cloud Build pipeline — blueprint Section 31.4 / 29.2
+# Build the FastAPI + Next.js image and deploy to Cloud Run (dev).
+# Run: gcloud builds submit --config infra/cloudbuild.yaml --substitutions=_REGION=us-central1 .
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - gcr.io/$PROJECT_ID/auteur:$SHORT_SHA
+      - -f
+      - backend/Dockerfile
+      - .
+  - name: gcr.io/cloud-builders/docker
+    args: [push, gcr.io/$PROJECT_ID/auteur:$SHORT_SHA]
+  - name: gcr.io/cloud-builders/gcloud
+    args:
+      - run
+      - deploy
+      - auteur-dev
+      - --image=gcr.io/$PROJECT_ID/auteur:$SHORT_SHA
+      - --region=$_REGION
+      - --min-instances=1
+      - --max-instances=10
+      - --concurrency=80
+      - --memory=1Gi
+      - --cpu=1
+      - --set-env-vars=GCP_PROJECT_ID=$PROJECT_ID,GCP_LOCATION=$_REGION
+      - --update-secrets=PARALLEL_API_KEY=parallel-api-key:latest
+substitutions:
+  _REGION: us-central1
+options:
+  logging: CLOUD_LOGGING_ONLY

@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "**Verdict:** CONSISTENT  \n**Score:** 0.9  \n**Rationale:** The character maintains a highly recognizable face identity, age (~52), salt-and-pepper beard, and consistent wardrobe (oilskin coat over wool sweater) across all four distinct environmental contexts and lighting conditions.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1787618348,
+  "id": "202608250839079e3b537c07e54765",
+  "model": "glm-5v-turbo",
+  "object": "chat.completion",
+  "request_id": "202608250839079e3b537c07e54765",
+  "usage": {
+    "completion_tokens": 61,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2535,
+    "prompt_tokens_details": {
+      "cached_tokens": 2
+    },
+    "total_tokens": 2596
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "task": "Day 1 \u2014 Veo 3.1 cross-shot character consistency validation",
+  "blueprint_ref": "Section 32.2 / 50.2",
+  "timestamp_utc": "2026-08-25T00:34:23.481628+00:00",
+  "project_id": "auteur-506523",
+  "location": "us-central1",
+  "character": {
+    "name": "Ewan",
+    "prompt": "Cinematic portrait photograph of Ewan, a 52-year-old Scottish lighthouse keeper from 1892. Weathered, deeply lined face with a salt-and-pepper beard, tired but kind eyes. Wearing a heavy dark oilskin storm coat over a wool sweater. Dramatic single-source lamplight from the side, moody atmosphere, photorealistic, shallow depth of field, 50mm lens, muted teal-and-amber color grade. Looking just off camera."
+  },
+  "image_model": "gemini-2.5-flash-image",
+  "image_model_note": "Blueprint specifies Imagen 3; on project auteur-506523 Imagen 3 is deprecated and the supported successor is gemini-2.5-flash-image (used here).",
+  "veo_model": "veo-3.1-fast-generate-001",
+  "veo_model_note": "Blueprint 'Veo 3.1 Light' tier -> veo-3.1-lite-generate-001",
+  "reference_type": "ASSET (persistent subject reference across scenes)",
+  "scenes": [
+    {
+      "id": "shot_1_lamp_room",
+      "scene_label": "Lamp Room (interior, dusk)",
+      "prompt": "Ewan, the 52-year-old lighthouse keeper with a salt-and-pepper beard and dark oilskin coat, walks slowly through the lamp room of a 1892 lighthouse at dusk. He polishes the great brass Fresnel lens. Warm golden lamplight, glass and brass reflections, dust motes in the air. Cinematic, slow tracking shot, muted teal-and-amber color grade, photorealistic, 24fps."
+    },
+    {
+      "id": "shot_2_rocks",
+      "scene_label": "Rocks (coastal, dawn)",
+      "prompt": "Ewan, the 52-year-old lighthouse keeper with a salt-and-pepper beard and dark oilskin coat, descends carefully over wet black rocks below the lighthouse at dawn. He discovers a glass bottle washed ashore and kneels to pick it up. Crashing waves, sea spray, overcast grey sky, North Sea coast. Cinematic wide shot, muted teal-and-amber color grade, photorealistic, 24fps."
+    },
+    {
+      "id": "shot_3_interior",
+      "scene_label": "Interior (candlelight, reading)",
+      "prompt": "Ewan, the 52-year-old lighthouse keeper with a salt-and-pepper beard, now wearing a thick knitted wool sweater, sits at a wooden table in his quarters reading a message by candlelight. Flickering amber light on his face, old maps and a lantern on the table, 1892 interior. Close-up, shallow depth of field, muted teal-and-amber color grade, photorealistic, 24fps."
+    },
+    {
+      "id": "shot_4_exterior",
+      "scene_label": "Exterior (balcony, stormy sea, dusk)",
+      "prompt": "Ewan, the 52-year-old lighthouse keeper with a salt-and-pepper beard and dark oilskin coat, stands on the lighthouse balcony looking out over a stormy dark sea at dusk. His coat flaps in the wind, his expression is transformed and resolute. Lighthouse beam sweeping, dramatic sky. Cinematic medium shot, muted teal-and-amber color grade, photorealistic, 24fps."
+    }
+  ],
+  "veo_config": {
+    "duration_seconds": 8,
+    "aspect_ratio": "16:9",
+    "resolution": "720p",
+    "generate_audio": false
+  },
+  "character_reference": {
+    "path": "/home/z/my-project/auteur/backend/validation/outputs/character_reference.png",
+    "status": "ok"
+  },
+  "shots": [
+    {
+      "shot_id": "shot_1_lamp_room",
+      "scene_label": "Lamp Room (interior, dusk)",
+      "status": "ok",
+      "output_path": "/home/z/my-project/auteur/backend/validation/outputs/shot_1_lamp_room.mp4",
+      "duration_seconds": 8,
+      "resolution": "720p",
+      "aspect_ratio": "16:9",
+      "model": "veo-3.1-fast-generate-001",
+      "operation_name": "projects/auteur-506523/locations/us-central1/publishers/google/models/veo-3.1-fast-generate-001/operations/946d7728-205d-42d1-a4bb-e9f0f5df8dbc",
+      "elapsed_sec": 44.7,
+      "file_size_bytes": 3458786,
+      "frame_path": "/home/z/my-project/auteur/backend/validation/outputs/shot_1_lamp_room_frame.png"
+    },
+    {
+      "shot_id": "shot_2_rocks",
+      "scene_label": "Rocks (coastal, dawn)",
+      "status": "ok",
+      "output_path": "/home/z/my-project/auteur/backend/validation/outputs/shot_2_rocks.mp4",
+      "duration_seconds": 8,
+      "resolution": "720p",
+      "aspect_ratio": "16:9",
+      "model": "veo-3.1-fast-generate-001",
+      "operation_name": "projects/auteur-506523/locations/us-central1/publishers/google/models/veo-3.1-fast-generate-001/operations/979a55a5-eefb-4776-9fc7-ec4d6ddd7b46",
+      "elapsed_sec": 44.1,
+      "file_size_bytes": 4151015,
+      "frame_path": "/home/z/my-project/auteur/backend/validation/outputs/shot_2_rocks_frame.png"
+    },
+    {
+      "shot_id": "shot_3_interior",
+      "scene_label": "Interior (candlelight, reading)",
+      "status": "ok",
+      "output_path": "/home/z/my-project/auteur/backend/validation/outputs/shot_3_interior.mp4",
+      "duration_seconds": 8,
+      "resolution": "720p",
+      "aspect_ratio": "16:9",
+      "model": "veo-3.1-fast-generate-001",
+      "operation_name": "projects/auteur-506523/locations/us-central1/publishers/google/models/veo-3.1-fast-generate-001/operations/3af196c8-7cef-4e72-af96-980989f9666c",
+      "elapsed_sec": 30.1,
+      "file_size_bytes": 2705307,
+      "frame_path": "/home/z/my-project/auteur/backend/validation/outputs/shot_3_interior_frame.png"
+    },
+    {
+      "shot_id": "shot_4_exterior",
+      "scene_label": "Exterior (balcony, stormy sea, dusk)",
+      "status": "ok",
+      "output_path": "/home/z/my-project/auteur/backend/validation/outputs/shot_4_exterior.mp4",
+      "duration_seconds": 8,
+      "resolution": "720p",
+      "aspect_ratio": "16:9",
+      "model": "veo-3.1-fast-generate-001",
+      "operation_name": "projects/auteur-506523/locations/us-central1/publishers/google/models/veo-3.1-fast-generate-001/operations/ac1ee056-40ed-4fb3-bd88-f3e087628c77",
+      "elapsed_sec": 30.3,
+      "file_size_bytes": 3089220,
+      "frame_path": "/home/z/my-project/auteur/backend/validation/outputs/shot_4_exterior_frame.png"
+    }
+  ],
+  "frames": [
+    "/home/z/my-project/auteur/backend/validation/outputs/shot_1_lamp_room_frame.png",
+    "/home/z/my-project/auteur/backend/validation/outputs/shot_2_rocks_frame.png",
+    "/home/z/my-project/auteur/backend/validation/outputs/shot_3_interior_frame.png",
+    "/home/z/my-project/auteur/backend/validation/outputs/shot_4_exterior_frame.png"
+  ],
+  "side_by_side": "/home/z/my-project/auteur/docs/validation-day-1.png",
+  "consistency_check": {
+    "shots": [
+      {
+        "shot": 1,
+        "scene": "Character tending to the lighthouse lamp.",
+        "face_identity": 0.95,
+        "age_appearance": 1.0,
+        "beard_facial_hair": 1.0,
+        "wardrobe": 0.9,
+        "overall": 0.95,
+        "notes": "Excellent facial match to the reference. Wardrobe is consistent, though the sweater is mostly obscured. Lighting and mood are cohesive."
+      },
+      {
+        "shot": 2,
+        "scene": "Character walking on a rocky shore near the sea.",
+        "face_identity": 0.75,
+        "age_appearance": 1.0,
+        "beard_facial_hair": 0.9,
+        "wardrobe": 1.0,
+        "overall": 0.85,
+        "notes": "Wider shot where facial details are less clear, but the overall silhouette, build, and wardrobe are perfectly consistent. No features contradict the reference."
+      },
+      {
+        "shot": 3,
+        "scene": "Character reading a letter by candlelight.",
+        "face_identity": 1.0,
+        "age_appearance": 1.0,
+        "beard_facial_hair": 1.0,
+        "wardrobe": 0.9,
+        "overall": 0.95,
+        "notes": "Near-perfect match to the reference image in terms of facial structure, age, and beard. The dramatic lighting showcases the consistency effectively."
+      },
+      {
+        "shot": 4,
+        "scene": "Character looking towards the camera on a balcony overlooking the sea.",
+        "face_identity": 0.95,
+        "age_appearance": 1.0,
+        "beard_facial_hair": 1.0,
+        "wardrobe": 1.0,
+        "overall": 1.0,
+        "notes": "Extremely strong match. Both the oilskin coat and the patterned wool sweater are clearly visible and identical to the reference. Facial identity is held perfectly."
+      }
+    ],
+    "mean_overall": 0.94,
+    "verdict": "GO",
+    "verdict_rationale": "Character consistency is exceptionally high across all four shots. Facial identity, age, beard, and wardrobe are maintained with remarkable fidelity to the reference image and across different scenes, lighting conditions, and camera angles. The character 'Ewan' is successfully realized as a persistent asset.",
+    "drift_threshold": 0.25
+  },
+  "verdict": "GO",
+  "definition_of_done": {
+    "docs_validation_day_1_png": "/home/z/my-project/auteur/docs/validation-day-1.png",
+    "present": true
+  }
+}

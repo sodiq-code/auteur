@@ -1,0 +1,45 @@
+# ---- Secrets ----
+.env
+.env.*
+!*.env.example
+auteur-sa-key.json
+*-sa-key.json
+upload/
+blueprint_full.txt
+
+# ---- Generated run logs ----
+day1-run.log
+*.log
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Node / Next.js ----
+node_modules/
+.next/
+out/
+dist/
+build/
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- IDE ----
+.idea/
+.vscode/
+*.swp
+
+# ---- Day-1 validation artifacts: COMMITTED as evidence ----
+# (character_reference.png, day1-manifest.json, *_frame.png, *.mp4, and the
+#  side-by-side docs/validation-day-1.png are all committed intentionally —
+#  they are the Day-1 deliverable. Do NOT ignore them.)
