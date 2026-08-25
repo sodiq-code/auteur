@@ -1,0 +1,84 @@
+/**
+ * ShotGridView — blueprint Section 30.2 row 7.
+ * 2x2 grid of 4 shots; click any for detail; drift score per shot.
+ */
+"use client";
+
+import Image from "next/image";
+import { Grid3x3, ChevronRight, Check } from "lucide-react";
+import { useStudio } from "@/lib/store";
+import { Badge } from "@/components/ui/badge";
+
+const SHOT_DATA = [
+  { id: 1, label: "Lamp Room", scene: "Interior, dusk · polishing the lens", score: 0.95, frame: "/auteur/day1/shot-1.png" },
+  { id: 2, label: "Rocks", scene: "Coastal, dawn · the bottle", score: 0.85, frame: "/auteur/day1/shot-2.png" },
+  { id: 3, label: "Interior", scene: "Candlelight · reading the message", score: 0.95, frame: "/auteur/day1/shot-3.png" },
+  { id: 4, label: "Exterior", scene: "Balcony · stormy sea, dusk", score: 0.95, frame: "/auteur/day1/shot-4.png" },
+];
+
+export function ShotGridView() {
+  const setView = useStudio((s) => s.setView);
+
+  return (
+    <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mb-6">
+        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-400">
+          <Grid3x3 className="h-3.5 w-3.5 text-teal-400" />
+          Step 6 — Shot Grid
+        </div>
+        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">One character. Four scenes.</h2>
+        <p className="mt-1.5 text-sm text-zinc-400">
+          The signature moment: the same character held consistent across four
+          different scenes via the Veo 3.1 ASSET reference.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {SHOT_DATA.map((s) => (
+          <div
+            key={s.id}
+            className="auteur-shot-card group relative overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/40"
+          >
+            <div className="relative aspect-video overflow-hidden">
+              <Image
+                src={s.frame}
+                alt={`Shot ${s.id} — ${s.label}`}
+                fill
+                className="object-cover transition group-hover:scale-105"
+                sizes="(max-width: 640px) 50vw, 400px"
+              />
+              <div className="absolute left-2 top-2 rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[10px] text-teal-300 backdrop-blur">
+                #{s.id}
+              </div>
+              <div className="absolute right-2 top-2 rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[10px] text-emerald-300 backdrop-blur">
+                {s.score.toFixed(2)}
+              </div>
+            </div>
+            <div className="p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-zinc-200">{s.label}</span>
+                <Badge className="border-0 bg-emerald-500/15 px-1.5 py-0 text-[9px] text-emerald-300">
+                  <Check className="mr-0.5 h-2.5 w-2.5" />consistent
+                </Badge>
+              </div>
+              <p className="mt-0.5 text-[11px] text-zinc-500">{s.scene}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3">
+        <span className="text-xs text-zinc-400">
+          Mean consistency: <span className="font-mono text-emerald-400">0.925</span> · drift threshold 0.25
+        </span>
+        <button
+          onClick={() => setView("consistency")}
+          className="inline-flex items-center gap-1.5 rounded-md bg-teal-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-teal-400"
+        >
+          Consistency dashboard
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
