@@ -4,25 +4,25 @@
       "finish_reason": "stop",
       "index": 0,
       "message": {
-        "content": "**Verdict:** CONSISTENT  \n**Score:** 0.9  \n**Rationale:** The character maintains a highly recognizable face identity, age (~52), salt-and-pepper beard, and consistent wardrobe (oilskin coat over wool sweater) across all four distinct environmental contexts and lighting conditions.",
+        "content": "**Verdict:** CONSISTENT\n**Score:** 0.9\n**Sentence:** The character maintains a highly consistent appearance across all four shots, with the salt-and-pepper beard, facial structure, and oilskin coat remaining clearly recognizable despite varying lighting conditions and camera angles.",
         "role": "assistant"
       }
     }
   ],
-  "created": 1787618348,
-  "id": "202608250839079e3b537c07e54765",
+  "created": 1787620302,
+  "id": "202608250911409295b7fd0c554d9e",
   "model": "glm-5v-turbo",
   "object": "chat.completion",
-  "request_id": "202608250839079e3b537c07e54765",
+  "request_id": "202608250911409295b7fd0c554d9e",
   "usage": {
-    "completion_tokens": 61,
+    "completion_tokens": 58,
     "completion_tokens_details": {
       "reasoning_tokens": 0
     },
-    "prompt_tokens": 2535,
+    "prompt_tokens": 2489,
     "prompt_tokens_details": {
-      "cached_tokens": 2
+      "cached_tokens": 3
     },
-    "total_tokens": 2596
+    "total_tokens": 2547
   }
 }

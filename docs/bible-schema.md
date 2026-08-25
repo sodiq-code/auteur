@@ -52,7 +52,7 @@ cross-shot consistency primitive (see `ARCHITECTURE.md` model note).
 | `name` | `str` | Display name (e.g., `"Ewan MacLeod"`). |
 | `age` | `int` | Used in Veo prompt construction. |
 | `appearance` | `str` | Free-text description; injected into the Veo prompt. |
-| `reference_image_url` | `Optional[str]` | Imagen 3-generated or user-uploaded. **Note:** on `auteur-506523` Imagen 3 is deprecated; the character reference is generated with `gemini-2.5-flash-image`. See `ARCHITECTURE.md`. |
+| `reference_image_url` | `Optional[str]` | Imagen 3-generated or user-uploaded. **Note:** on `auteur-506523` Imagen 3 is deprecated; the character reference is generated with `gemini-3-pro-image`. See `ARCHITECTURE.md`. |
 | `voice_profile` | `VoiceProfileSpec` | Link to a voice entry (each character has exactly one voice). |
 | `wardrobe_ids` | `List[str]` | Links to `WardrobeSpec` entries (a character can have multiple wardrobe options, e.g., interior vs. exterior). |
 

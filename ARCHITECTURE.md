@@ -112,7 +112,7 @@ The blueprint specifies "Imagen 3" and "Veo 3.1 Light" in several places. On
 the live GCP project `auteur-506523` (us-central1), Day-1 validation surfaced
 two deviations that are now codified into the architecture:
 
-1. **Imagen 3 is deprecated on `auteur-506523`.** Use `gemini-2.5-flash-image`
+1. **Imagen 3 is deprecated on `auteur-506523`.** Use `gemini-3-pro-image`
    for character reference images and storyboards. This is the supported
    successor on this project; it is the same modal family (Gemini image) and
    produces the persistent character asset the architecture depends on.

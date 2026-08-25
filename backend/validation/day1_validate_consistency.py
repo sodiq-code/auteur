@@ -8,11 +8,13 @@ Objective: validate that Veo 3.1 can produce visibly consistent characters
 across 4 shots in 4 scenes, given a character reference image.
 
 Pipeline:
-  1. Generate a character reference image via Imagen 3.
-     (On project auteur-506523, Imagen 3 is deprecated; the supported successor
-      is gemini-2.5-flash-image — used here with response_modalities=["IMAGE"].
-      This is the documented migration path per the Vertex AI deprecation notice.)
-  2. Generate 4 Veo 3.1 Light clips using the SAME character reference image
+  1. Generate a character reference image.
+     (Blueprint specifies Imagen 3. On project auteur-506523, Imagen 3 is
+      deprecated AND the 3.x Gemini image models are only accessible in the
+      `global` region (they 404 in us-central1). gemini-3-pro-image (Pro tier,
+      3.x generation) is the newest accessible Google Cloud image model —
+      used here via generate_content(response_modalities=["IMAGE"]).)
+  2. Generate 4 Veo 3.1 Fast clips using the SAME character reference image
      (passed as an ASSET reference) + 4 different scene prompts:
        - Scene 1: lamp room (interior, dusk)
        - Scene 2: rocks (coastal, dawn)
@@ -51,14 +53,22 @@ from typing import Any
 # --------------------------------------------------------------------------- #
 
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "auteur-506523")
-LOCATION = os.environ.get("GCP_LOCATION", "us-central1")
+LOCATION = os.environ.get("GCP_LOCATION", "us-central1")          # Veo + Gemini Pro (vision)
+IMAGE_LOCATION = os.environ.get("GCP_IMAGE_LOCATION", "global")  # gemini-3-pro-image only in `global`
 SA_KEY = os.environ.get(
     "GOOGLE_APPLICATION_CREDENTIALS",
     "/home/z/my-project/auteur-sa-key.json",
 )
 
-# Blueprint model mapping (see worklog Day-1 Stage Summary + docs/validation-day-1-report.md):
-#   blueprint "Imagen 3"        -> gemini-2.5-flash-image (Imagen 3 deprecated on proj)
+# Blueprint model mapping (see worklog + docs/validation-day-1-report.md):
+#   blueprint "Imagen 3"        -> gemini-3-pro-image  (Imagen 3 deprecated on project;
+#                                  gemini-3-pro-image is the newest ACCESSIBLE Google
+#                                  image model — Pro tier, 3.x generation. NOTE: the
+#                                  3.x image models are ONLY accessible in the `global`
+#                                  region; in us-central1 they 404. gemini-2.5-flash-image
+#                                  was the first working model on Day 1 but is older;
+#                                  upgraded to gemini-3-pro-image for higher quality.)
+#                                  Iteration tier (storyboards, Day 7+): gemini-3.1-flash-image.
 #   blueprint "Veo 3.1 Light"  -> NOT USABLE: veo-3.1-lite-generate-001 rejects
 #                                  reference_images with FAILED_PRECONDITION
 #                                  ("The request is not supported by this model").
@@ -70,9 +80,9 @@ SA_KEY = os.environ.get(
 #   For Day 1 validation we use the FAST tier (cheaper than Standard, still supports
 #   the ASSET character reference). Standard is reserved for final demo renders.
 #   blueprint "Gemini 2.5 Pro"  -> gemini-2.5-pro
-IMAGE_MODEL = "gemini-2.5-flash-image"   # character reference image generation
-VEO_MODEL = "veo-3.1-fast-generate-001"  # blueprint "Veo 3.1" w/ ASSET ref (Lite lacks it)
-VISION_MODEL = "gemini-2.5-pro"          # consistency check (blueprint Table 31)
+IMAGE_MODEL = "gemini-3-pro-image"        # blueprint "Imagen 3" -> newest accessible (global region)
+VEO_MODEL = "veo-3.1-fast-generate-001"   # blueprint "Veo 3.1" w/ ASSET ref (Lite lacks it)
+VISION_MODEL = "gemini-2.5-pro"           # consistency check (blueprint Table 31)
 
 # The canonical character: Ewan, the 1892 lighthouse keeper (blueprint Table 25).
 CHARACTER_NAME = "Ewan"
@@ -163,26 +173,31 @@ def ensure_dirs() -> None:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def get_client():
+def get_client(region: str | None = None):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = SA_KEY
     from google import genai  # imported lazily so --help works offline
-    return genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)
+    return genai.Client(vertexai=True, project=PROJECT_ID, location=region or LOCATION)
+
+
+def get_image_client():
+    """Image model (gemini-3-pro-image) is only accessible in the `global` region."""
+    return get_client(region=IMAGE_LOCATION)
 
 
 # --------------------------------------------------------------------------- #
-# Step 1 — Character reference image (Imagen 3 -> gemini-2.5-flash-image)
+# Step 1 — Character reference image (Imagen 3 -> gemini-3-pro-image)
 # --------------------------------------------------------------------------- #
 
-def generate_character_reference(client) -> Path:
+def generate_character_reference(image_client) -> Path:
     from google.genai import types
 
     out_path = OUTPUT_DIR / "character_reference.png"
-    log("IMAGEN", f"Generating character reference: {CHARACTER_NAME}")
-    log("IMAGEN", f"  prompt: {CHARACTER_PROMPT[:90]}...")
-    log("IMAGEN", f"  model : {IMAGE_MODEL} (Imagen 3 successor on this project)")
+    log("IMAGE", f"Generating character reference: {CHARACTER_NAME}")
+    log("IMAGE", f"  prompt: {CHARACTER_PROMPT[:90]}...")
+    log("IMAGE", f"  model : {IMAGE_MODEL} (region={IMAGE_LOCATION}; newest accessible Google image model)")
 
     t0 = time.time()
-    resp = client.models.generate_content(
+    resp = image_client.models.generate_content(
         model=IMAGE_MODEL,
         contents=CHARACTER_PROMPT,
         config=types.GenerateContentConfig(response_modalities=["IMAGE"]),
@@ -203,7 +218,7 @@ def generate_character_reference(client) -> Path:
         raise RuntimeError("No image returned from image model")
 
     out_path.write_bytes(image_bytes)
-    log("IMAGEN", f"  -> saved {out_path.name} ({len(image_bytes):,} bytes, {elapsed:.1f}s)")
+    log("IMAGE", f"  -> saved {out_path.name} ({len(image_bytes):,} bytes, {elapsed:.1f}s)")
     return out_path
 
 
@@ -587,10 +602,11 @@ def main() -> int:
     if not Path(SA_KEY).exists():
         log("FATAL", f"SA key not found at {SA_KEY}")
         return 2
-    log("MAIN", f"Project={PROJECT_ID}  Location={LOCATION}")
+    log("MAIN", f"Project={PROJECT_ID}  Location={LOCATION}  Image location={IMAGE_LOCATION}")
     log("MAIN", f"Image model={IMAGE_MODEL}  Veo model={VEO_MODEL}  Vision model={VISION_MODEL}")
 
-    client = get_client()
+    client = get_client()                 # Veo + Gemini Pro (vision) — us-central1
+    image_client = get_image_client()      # gemini-3-pro-image — global region
 
     manifest: dict[str, Any] = {
         "task": "Day 1 — Veo 3.1 cross-shot character consistency validation",
@@ -598,16 +614,27 @@ def main() -> int:
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "project_id": PROJECT_ID,
         "location": LOCATION,
+        "image_location": IMAGE_LOCATION,
         "character": {
             "name": CHARACTER_NAME,
             "prompt": CHARACTER_PROMPT,
         },
         "image_model": IMAGE_MODEL,
-        "image_model_note": "Blueprint specifies Imagen 3; on project auteur-506523 "
-                            "Imagen 3 is deprecated and the supported successor is "
-                            "gemini-2.5-flash-image (used here).",
+        "image_model_note": (
+            "Blueprint specifies Imagen 3 (Table 34). On project auteur-506523 "
+            "Imagen 3 is deprecated. The 3.x Gemini image models are listed but "
+            "ONLY accessible in the `global` region (they 404 in us-central1). "
+            f"{IMAGE_MODEL} (Pro tier, 3.x generation) is the newest accessible "
+            "Google Cloud image model — used here for the character reference. "
+            "Iteration tier for storyboards (Day 7+): gemini-3.1-flash-image."
+        ),
         "veo_model": VEO_MODEL,
-        "veo_model_note": "Blueprint 'Veo 3.1 Light' tier -> veo-3.1-lite-generate-001",
+        "veo_model_note": (
+            "Blueprint 'Veo 3.1 Light' tier (veo-3.1-lite-generate-001) does NOT "
+            "support reference_images (FAILED_PRECONDITION). The ASSET character "
+            "reference requires the Fast or Standard tier; Fast used here, "
+            "Standard reserved for final demo renders (Day 11)."
+        ),
         "reference_type": "ASSET (persistent subject reference across scenes)",
         "scenes": SCENES,
         "veo_config": {
@@ -620,7 +647,7 @@ def main() -> int:
 
     # Step 1 — character reference image
     try:
-        char_ref_path = generate_character_reference(client)
+        char_ref_path = generate_character_reference(image_client)
         manifest["character_reference"] = {
             "path": str(char_ref_path),
             "status": "ok",
@@ -698,7 +725,9 @@ def write_manifest_and_report(manifest: dict, side_by_side, vision) -> None:
     lines.append("## Models\n")
     lines.append(f"- **Character reference image:** `{manifest.get('image_model')}` "
                  f"(blueprint specifies Imagen 3; on this project Imagen 3 is deprecated "
-                 f"and `gemini-2.5-flash-image` is the supported successor).\n")
+                 f"and the 3.x Gemini image models are only accessible in the `global` "
+                 f"region — `gemini-3-pro-image` is the newest accessible, Pro-tier, "
+                 f"used here in region `{manifest.get('image_location','global')}`).\n")
     lines.append(f"- **Video generation:** `{manifest.get('veo_model')}` "
                  "(blueprint 'Veo 3.1 Light' tier).\n")
     lines.append(f"- **Reference mechanism:** `reference_images` with "

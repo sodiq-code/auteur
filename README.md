@@ -50,11 +50,7 @@ proof is immediate, undeniable, and impossible to forget.
 | Deployment | Cloud Run | Serverless, autoscaling |
 | Partner integration | **Parallel Search API** (called at runtime, visible in UI) | Grounded imagination |
 
-> **Image-model note:** the blueprint specifies Imagen 3 for character reference / storyboard
-> generation. On the project used for this submission (`auteur-506523`), Imagen 3 is deprecated
-> and the supported successor is `gemini-2.5-flash-image` (Gemini's image-generation model), used
-> here via `generate_content(response_modalities=["IMAGE"])`. This is the documented Vertex AI
-> migration path. See `docs/validation-day-1-report.md` for the full Day-1 model discovery.
+> **Image-model note:** the blueprint specifies Imagen 3 for character reference / storyboard generation. On the project used for this submission (`auteur-506523`), Imagen 3 is deprecated AND the 3.x Gemini image models are listed but ONLY accessible in the `global` region (they 404 in `us-central1`). `gemini-3-pro-image` (Pro tier, 3.x generation) is the newest accessible Google Cloud image model — used here via `generate_content(response_modalities=["IMAGE"])` in the `global` region. The iteration tier for storyboards (Day 7+) is `gemini-3.1-flash-image`. See `docs/validation-day-1-report.md` for the full Day-1 model discovery.
 
 ## Partner-track declaration
 

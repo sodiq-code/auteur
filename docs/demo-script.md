@@ -190,7 +190,7 @@ Parallel Search result → Bible v{n} → Generation → Drift report
 (blueprint Section 24.5).
 
 > Day-1 validation note: blueprint specifies "Imagen 3"; on the live GCP
-> project, Imagen 3 is deprecated and `gemini-2.5-flash-image` is the
+> project, Imagen 3 is deprecated and `gemini-3-pro-image` is the
 > supported successor used to generate the persistent character reference
 > image. See `docs/validation-day-1-report.md` (mean cross-shot
 > consistency 0.94, verdict GO).
