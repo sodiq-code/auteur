@@ -1,16 +1,16 @@
-#!/usr/bin/env python3
 """
-Auteur — minimal FastAPI scaffold (blueprint Section 32.2 Day 2: "Initialize
-the Next.js + FastAPI scaffold").
+Auteur — FastAPI application (blueprint Section 26.2, Table 38).
 
-This is the seed for the full backend skeleton that comes in the next task
-(Section 32.2: backend/ main.py + agents/ + bible/schema.py + api/). For now
-it exposes a single /api/health endpoint that the next task will expand into
-the full API surface (blueprint Table 38).
+Mounts all API routers. The full API surface (14 endpoints per Table 38) is
+scaffolded; the heavy implementations (generation pipeline, assembly,
+consistency) come in their respective tasks.
 
-Run:
-  pip install -r backend/requirements.txt
+Run locally:
   uvicorn backend.main:app --reload --port 8000
+
+Run in Docker:
+  docker build -f backend/Dockerfile -t auteur-backend .
+  docker run -p 8000:8000 --env-file .env auteur-backend
 
 Health check:
   curl http://localhost:8000/api/health
@@ -24,6 +24,12 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .api import health as health_api
+from .api import projects as projects_api
+from .api import bible as bible_api
+from .api import shots as shots_api
+from .api import export as export_api
+
 app = FastAPI(
     title="Auteur — The Film Bible Agent",
     description=(
@@ -32,7 +38,7 @@ app = FastAPI(
         "Chirp 3, Lyria 2, and Imagen 3 generation call. (Agentic Cinema "
         "Hackathon — Parallel Partner Track)"
     ),
-    version="0.1.0",
+    version="0.2.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -46,30 +52,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.get("/api/health")
-def health() -> dict[str, Any]:
-    """Blueprint Table 38 row 14: /api/health returns {status, partner_status, model_status}."""
-    return {
-        "status": "ok",
-        "service": "auteur-backend",
-        "version": "0.1.0",
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "partner_status": {
-            "parallel_search": _check_env("PARALLEL_API_KEY"),
-            "endpoint": "https://api.parallel.ai/v1/search",
-            "auth": "x-api-key",
-        },
-        "model_status": {
-            # Regions documented in docs/validation-day-1-report.md
-            "veo": {"model": "veo-3.1-fast-generate-001", "region": "us-central1", "configured": _check_env("GCP_PROJECT_ID")},
-            "image": {"model": "gemini-3-pro-image", "region": "global", "configured": _check_env("GCP_PROJECT_ID")},
-            "bible": {"model": "gemini-3.1-pro-preview", "region": "global", "configured": _check_env("GCP_PROJECT_ID")},
-            "tts": {"model": "gemini-2.5-flash-tts", "region": "us-central1", "configured": _check_env("GCP_PROJECT_ID")},
-            "lyria": {"model": "lyria-002", "region": "us-central1", "configured": _check_env("GCP_PROJECT_ID")},
-        },
-        "definition_of_done": "next task: expand to full API surface (blueprint Table 38)",
-    }
+# Mount all routers under /api
+api_prefix = "/api"
+app.include_router(health_api.router, prefix=api_prefix)
+app.include_router(projects_api.router, prefix=api_prefix)
+app.include_router(bible_api.router, prefix=api_prefix)
+app.include_router(shots_api.router, prefix=api_prefix)
+app.include_router(export_api.router, prefix=api_prefix)
 
 
 @app.get("/")
@@ -77,10 +66,30 @@ def root() -> dict[str, str]:
     return {"service": "auteur", "docs": "/docs", "health": "/api/health"}
 
 
-def _check_env(name: str) -> bool:
-    return bool(os.environ.get(name))
+@app.get("/api")
+def api_root() -> dict[str, Any]:
+    return {
+        "service": "auteur-backend",
+        "version": "0.2.0",
+        "endpoints": [
+            "POST /api/projects",
+            "GET  /api/projects/{id}",
+            "GET  /api/projects/{id}/bible",
+            "PATCH /api/projects/{id}/bible/entries/{entryId}",
+            "GET  /api/projects/{id}/shots",
+            "POST /api/projects/{id}/shots/{shotId}/generate",
+            "POST /api/projects/{id}/shots/{shotId}/regenerate",
+            "GET  /api/projects/{id}/shots/{shotId}/consistency",
+            "POST /api/projects/{id}/assemble",
+            "POST /api/projects/{id}/share",
+            "GET  /api/projects/{id}/export/bible",
+            "GET  /api/projects/{id}/export/shots",
+            "GET  /api/projects/{id}/events",
+            "GET  /api/health",
+        ],
+    }
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)), reload=True)
