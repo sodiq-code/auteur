@@ -163,8 +163,47 @@ export async function regenerateShot(
 export async function getConsistency(
   projectId: string,
   shotId: string,
-): Promise<{ drift_score: number | null; breakdown: unknown; recommendation: string | null }> {
+): Promise<{ drift_score: number | null; breakdown: unknown; recommendation: string | null; status?: string }> {
   return apiFetch(`/api/projects/${projectId}/shots/${shotId}/consistency`);
+}
+
+export async function runConsistency(
+  projectId: string,
+  shotId: string,
+): Promise<Record<string, unknown>> {
+  return apiFetch(`/api/projects/${projectId}/shots/${shotId}/consistency`, { method: "POST" });
+}
+
+export interface ConsistencyShotReport {
+  shot_id: string;
+  order: number;
+  description?: string;
+  status: string;
+  drift_score?: number | null;
+  overall?: number | null;
+  face_identity?: number | null;
+  age_appearance?: number | null;
+  beard_facial_hair?: number | null;
+  wardrobe?: number | null;
+  recommendation?: string | null;
+  notes?: string;
+  error?: string;
+}
+
+export interface ConsistencyAllResponse {
+  project_id: string;
+  status: string;
+  shots: ConsistencyShotReport[];
+  mean_overall: number;
+  threshold: number;
+  verdict: string;
+  elapsed_sec: number;
+}
+
+export async function checkAllShots(projectId: string): Promise<ConsistencyAllResponse> {
+  return apiFetch<ConsistencyAllResponse>(`/api/projects/${projectId}/shots/check-all`, {
+    method: "POST",
+  });
 }
 
 // --------------------------------------------------------------------------- //

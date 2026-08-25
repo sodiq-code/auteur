@@ -83,13 +83,47 @@ async def regenerate_shot(project_id: str, shot_id: str, req: RegenerateRequest)
 async def get_consistency(project_id: str, shot_id: str) -> dict[str, Any]:
     """Get the drift report for a shot (blueprint Table 38 row 8).
 
-    Returns a stub for now; the Consistency Check Agent (Day 9) will populate
-    the per-attribute breakdown + recommendation.
+    If the consistency check hasn't been run yet, runs it now.
+    Returns the drift score + per-attribute breakdown + recommendation.
     """
-    return {
-        "shot_id": shot_id,
-        "drift_score": None,
-        "breakdown": None,
-        "recommendation": None,
-        "note": "consistency check agent runs in the consistency-pipeline task",
-    }
+    # check if we already have a cached consistency report
+    existing = await store.get_generation(project_id, shot_id, "consistency")
+    if existing:
+        return {"shot_id": shot_id, "status": "cached", **existing}
+
+    # run the check
+    from ..pipelines import check as check_pipeline
+    result = await check_pipeline.check_shot(project_id, shot_id)
+    return result
+
+
+@router.post("/{shot_id}/consistency")
+async def run_consistency(project_id: str, shot_id: str) -> dict[str, Any]:
+    """Run the Consistency Check Agent on a shot (blueprint Day 9).
+
+    Extracts a frame from the generated Veo clip, compares it to the character
+    reference via Gemini 3.1 Pro vision, returns the drift score + breakdown.
+    """
+    from ..pipelines import check as check_pipeline
+    project = await store.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="project not found")
+    shots = await store.get_shots(project_id)
+    if not any(s.id == shot_id for s in shots):
+        raise HTTPException(status_code=404, detail="shot not found")
+    result = await check_pipeline.check_shot(project_id, shot_id)
+    return result
+
+
+@router.post("/check-all")
+async def check_all_shots(project_id: str) -> dict[str, Any]:
+    """Run the Consistency Check Agent on ALL shots (blueprint Day 9 DoD).
+
+    Returns a summary with per-shot drift scores + the mean overall + the verdict.
+    """
+    from ..pipelines import check as check_pipeline
+    project = await store.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="project not found")
+    result = await check_pipeline.check_all_shots(project_id)
+    return result

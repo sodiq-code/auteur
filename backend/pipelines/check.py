@@ -1,0 +1,198 @@
+"""
+Auteur — consistency check pipeline (blueprint Section 32.2 Day 9).
+
+Extracts a representative frame from each generated Veo clip (via ffmpeg),
+runs the Consistency Check Agent (Gemini 3.1 Pro vision) to compare it to the
+character reference image, and produces a drift score per shot.
+
+Definition of done (blueprint P861): each shot has a drift score; re-generate
+button produces a new generation with stricter context.
+"""
+from __future__ import annotations
+
+import asyncio
+import base64
+import subprocess
+import tempfile
+import time
+from pathlib import Path
+from typing import Any
+
+from ..agents import consistency as consistency_agent
+from ..bible import store
+
+
+async def check_shot(project_id: str, shot_id: str, char_ref_png: bytes | None = None) -> dict[str, Any]:
+    """Run the Consistency Check Agent on one shot (blueprint Day 9 DoD).
+
+    1. Retrieve the generated Veo MP4 from the store.
+    2. Extract a representative frame (ffmpeg @ 50% duration).
+    3. Run the Consistency Check Agent (Gemini vision) comparing the frame to
+       the character reference.
+    4. Persist the drift report + return it.
+    """
+    t0 = time.time()
+
+    # 1. Get the generated video
+    gen = await store.get_generation(project_id, shot_id, "veo")
+    if not gen or not gen.get("mp4_bytes"):
+        return {"shot_id": shot_id, "status": "no_video", "drift_score": None,
+                "recommendation": None, "note": "no Veo clip generated for this shot"}
+
+    mp4_bytes = gen["mp4_bytes"]
+
+    # 2. Extract a frame at 50% duration
+    frame_png = _extract_frame(mp4_bytes)
+    if not frame_png:
+        return {"shot_id": shot_id, "status": "frame_extract_failed",
+                "drift_score": None, "recommendation": None,
+                "note": "could not extract a frame from the Veo clip"}
+
+    # 3. Get the character reference image
+    if not char_ref_png:
+        # Look for the bundled character reference (shipped in the Docker image)
+        # at backend/character_reference.png
+        ref_path = Path(__file__).resolve().parent.parent / "character_reference.png"
+        if ref_path.exists():
+            char_ref_png = ref_path.read_bytes()
+        else:
+            # Fallback to the validation outputs dir (dev only)
+            ref_path = Path(__file__).resolve().parents[2] / "validation" / "outputs" / "character_reference.png"
+            if ref_path.exists():
+                char_ref_png = ref_path.read_bytes()
+            else:
+                return {"shot_id": shot_id, "status": "no_char_ref",
+                        "drift_score": None, "recommendation": None,
+                        "note": "no character reference image available for comparison"}
+
+    # 4. Run the Consistency Check Agent
+    shot = None
+    shots = await store.get_shots(project_id)
+    shot = next((s for s in shots if s.id == shot_id), None)
+    scene_label = shot.description[:80] if shot else ""
+
+    try:
+        result = await consistency_agent.check_shot(char_ref_png, frame_png, scene_label)
+    except Exception as e:
+        return {"shot_id": shot_id, "status": "check_failed",
+                "drift_score": None, "recommendation": None,
+                "error": str(e)[:200]}
+
+    elapsed = round(time.time() - t0, 2)
+    result["shot_id"] = shot_id
+    result["status"] = "checked"
+    result["elapsed_sec"] = elapsed
+
+    # 5. Persist the drift report
+    await store.save_generation(project_id, shot_id, "consistency", {
+        "drift_score": result.get("drift_score"),
+        "overall": result.get("overall"),
+        "face_identity": result.get("face_identity"),
+        "age_appearance": result.get("age_appearance"),
+        "beard_facial_hair": result.get("beard_facial_hair"),
+        "wardrobe": result.get("wardrobe"),
+        "recommendation": result.get("recommendation"),
+        "notes": result.get("notes"),
+        "threshold": result.get("threshold", 0.25),
+        "elapsed_sec": elapsed,
+    })
+
+    await store.log_event(project_id, "consistency_check_completed", {
+        "shotId": shot_id, "drift_score": result.get("drift_score"),
+        "recommendation": result.get("recommendation"),
+        "elapsed_sec": elapsed,
+    })
+
+    return result
+
+
+async def check_all_shots(project_id: str, char_ref_png: bytes | None = None) -> dict[str, Any]:
+    """Run the Consistency Check Agent on all shots (blueprint Day 9 DoD).
+
+    Returns a summary with per-shot drift scores + the mean overall + the verdict.
+    """
+    t0 = time.time()
+    shots = await store.get_shots(project_id)
+    if not shots:
+        return {"project_id": project_id, "status": "no_shots", "shots": []}
+
+    # Run checks concurrently (each is independent — blueprint Table 31 row 6: stateless)
+    tasks = [check_shot(project_id, s.id, char_ref_png) for s in shots]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    shot_reports = []
+    for shot, result in zip(shots, results):
+        if isinstance(result, Exception):
+            shot_reports.append({
+                "shot_id": shot.id, "order": shot.order,
+                "status": "failed", "error": str(result)[:200],
+                "drift_score": None, "overall": None,
+            })
+        else:
+            shot_reports.append({
+                "shot_id": shot.id, "order": shot.order,
+                "description": shot.description[:100],
+                **result,
+            })
+
+    # Calculate the mean overall + verdict
+    overalls = [r.get("overall") for r in shot_reports if r.get("overall") is not None]
+    mean_overall = sum(overalls) / len(overalls) if overalls else 0.0
+    threshold = 0.25
+    all_pass = all(
+        r.get("drift_score") is not None and r["drift_score"] <= threshold
+        for r in shot_reports
+    )
+    verdict = "GO" if all_pass and overalls else ("PARTIAL" if overalls else "UNKNOWN")
+
+    elapsed = round(time.time() - t0, 2)
+    await store.log_event(project_id, "consistency_check_all_completed", {
+        "shots_checked": len(shot_reports),
+        "mean_overall": round(mean_overall, 3),
+        "verdict": verdict,
+        "elapsed_sec": elapsed,
+    })
+
+    return {
+        "project_id": project_id,
+        "status": "checked",
+        "shots": shot_reports,
+        "mean_overall": round(mean_overall, 3),
+        "threshold": threshold,
+        "verdict": verdict,
+        "elapsed_sec": elapsed,
+    }
+
+
+def _extract_frame(mp4_bytes: bytes) -> bytes | None:
+    """Extract a representative frame (at 50% duration) from an MP4 as PNG."""
+    tmpdir = tempfile.mkdtemp(prefix="auteur_frame_")
+    try:
+        mp4_path = Path(tmpdir) / "clip.mp4"
+        frame_path = Path(tmpdir) / "frame.png"
+        mp4_path.write_bytes(mp4_bytes)
+
+        # probe duration
+        probe = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", str(mp4_path)],
+            capture_output=True, text=True, timeout=10,
+        )
+        duration = float(probe.stdout.strip() or "0") if probe.returncode == 0 else 0.0
+        ts = max(0.1, duration / 2.0) if duration > 0 else 2.0
+
+        # extract frame
+        cmd = [
+            "ffmpeg", "-y", "-loglevel", "error",
+            "-ss", f"{ts:.2f}", "-i", str(mp4_path),
+            "-frames:v", "1", "-q:v", "2", str(frame_path),
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        if result.returncode != 0 or not frame_path.exists():
+            return None
+        return frame_path.read_bytes()
+    except Exception:
+        return None
+    finally:
+        import shutil
+        shutil.rmtree(tmpdir, ignore_errors=True)
