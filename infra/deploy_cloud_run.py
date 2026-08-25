@@ -262,6 +262,8 @@ def deploy_service(service: str, image: str, region: str) -> str:
                     {"name": "GCP_LOCATION", "value": region},
                     {"name": "GCP_IMAGE_LOCATION", "value": "global"},
                     {"name": "AUTEUR_CORS_ORIGINS", "value": "*"},
+                    # Parallel Search API key (partner track — called at runtime per Rules §7B)
+                    {"name": "PARALLEL_API_KEY", "value": os.environ.get("PARALLEL_API_KEY", "")},
                     # PORT is auto-set by Cloud Run (reserved env name)
                 ],
             }],

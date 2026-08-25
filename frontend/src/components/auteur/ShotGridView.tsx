@@ -10,13 +10,17 @@ import { useStudio } from "@/lib/store";
 import { Badge } from "@/components/ui/badge";
 
 const SHOT_DATA = [
-  { id: 1, label: "Lamp Room", scene: "Interior, dusk · polishing the lens", score: 0.95, frame: "/auteur/day1/shot-1.png" },
-  { id: 2, label: "Rocks", scene: "Coastal, dawn · the bottle", score: 0.85, frame: "/auteur/day1/shot-2.png" },
-  { id: 3, label: "Interior", scene: "Candlelight · reading the message", score: 0.95, frame: "/auteur/day1/shot-3.png" },
-  { id: 4, label: "Exterior", scene: "Balcony · stormy sea, dusk", score: 0.95, frame: "/auteur/day1/shot-4.png" },
+  { id: 1, label: "Lamp Room", scene: "Interior, dusk · polishing the lens", score: 0.95, frame: "/auteur/day1/shot-1.png", notes: "Re-framed to three-quarter profile after stricter model flagged obscured face." },
+  { id: 2, label: "Rocks", scene: "Coastal, dawn · the bottle", score: 0.85, frame: "/auteur/day1/shot-2.png", notes: "Re-framed to medium shot after wide-shot drift; face in profile + shadow." },
+  { id: 3, label: "Interior", scene: "Candlelight · reading the message", score: 0.95, frame: "/auteur/day1/shot-3.png", notes: "Near-perfect match across all dimensions." },
+  { id: 4, label: "Exterior", scene: "Balcony · stormy sea, dusk", score: 0.95, frame: "/auteur/day1/shot-4.png", notes: "Excellent match. Coat, sweater, beard all consistent." },
 ];
 
-export function ShotGridView() {
+interface ShotGridProps {
+  onShotClick?: (shot: typeof SHOT_DATA[number]) => void;
+}
+
+export function ShotGridView({ onShotClick }: ShotGridProps = {}) {
   const setView = useStudio((s) => s.setView);
 
   return (
@@ -35,9 +39,10 @@ export function ShotGridView() {
 
       <div className="grid grid-cols-2 gap-3">
         {SHOT_DATA.map((s) => (
-          <div
+          <button
             key={s.id}
-            className="auteur-shot-card group relative overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/40"
+            onClick={() => onShotClick?.(s)}
+            className="auteur-shot-card group relative block w-full overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/40 text-left"
           >
             <div className="relative aspect-video overflow-hidden">
               <Image
@@ -63,7 +68,7 @@ export function ShotGridView() {
               </div>
               <p className="mt-0.5 text-[11px] text-zinc-500">{s.scene}</p>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 

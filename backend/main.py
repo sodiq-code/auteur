@@ -29,6 +29,7 @@ from .api import projects as projects_api
 from .api import bible as bible_api
 from .api import shots as shots_api
 from .api import export as export_api
+from .api import director as director_api
 
 app = FastAPI(
     title="Auteur — The Film Bible Agent",
@@ -59,6 +60,7 @@ app.include_router(projects_api.router, prefix=api_prefix)
 app.include_router(bible_api.router, prefix=api_prefix)
 app.include_router(shots_api.router, prefix=api_prefix)
 app.include_router(export_api.router, prefix=api_prefix)
+app.include_router(director_api.router, prefix=api_prefix)
 
 
 @app.get("/")

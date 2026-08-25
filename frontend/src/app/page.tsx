@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import {
   Film, Home, Edit3, Search, BookOpen, ListOrdered,
   Loader2, Grid3x3, Gauge, Clapperboard, Share2,
-  Github, ExternalLink, AlertCircle,
+  Github, ExternalLink, AlertCircle, Server, Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useStudio, type StudioView } from "@/lib/store";
 import { getHealth, type HealthStatus } from "@/lib/api";
+import { useKeyboardShortcuts } from "@/lib/use-keyboard";
+import type { Reference } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { LandingView } from "@/components/auteur/LandingView";
 import { LoglineView } from "@/components/auteur/LoglineView";
@@ -20,6 +22,8 @@ import { ShotGridView } from "@/components/auteur/ShotGridView";
 import { ConsistencyView } from "@/components/auteur/ConsistencyView";
 import { AssemblyView } from "@/components/auteur/AssemblyView";
 import { ShareView } from "@/components/auteur/ShareView";
+import { HealthPanel } from "@/components/auteur/HealthPanel";
+import { ShotDetailDialog } from "@/components/auteur/ShotDetailDialog";
 
 const NAV_ITEMS: { view: StudioView; label: string; icon: typeof Film; step?: number }[] = [
   { view: "landing", label: "Home", icon: Home },
@@ -35,15 +39,51 @@ const NAV_ITEMS: { view: StudioView; label: string; icon: typeof Film; step?: nu
 ];
 
 export default function Page() {
-  const { view, setView, project, error, setError } = useStudio();
+  const { view, setView, project, error, setError, setBible, setResearch, setResearchProgress } = useStudio();
   const [health, setHealthState] = useState<HealthStatus | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [healthPanelOpen, setHealthPanelOpen] = useState(false);
+  const [detailShot, setDetailShot] = useState<{ id: number; label: string; scene: string; frame: string; scores: { face: number; age: number; beard: number; wardrobe: number; overall: number }; notes: string } | null>(null);
 
   useEffect(() => {
     getHealth()
       .then(setHealthState)
       .catch((e) => setError(e instanceof Error ? e.message : "backend unreachable"));
   }, [setError]);
+
+  // keyboard shortcuts
+  useKeyboardShortcuts({
+    onToggleHealth: () => setHealthPanelOpen((v) => !v),
+    onLoadDemo: () => {
+      // load the canonical lighthouse-keeper demo into the store
+      const demoRefs: Reference[] = [
+        { id: "r1", url: "https://en.wikipedia.org/wiki/Fresnel_lens", title: "Fresnel lens — Wikipedia", snippet: "The Fresnel lens used in lighthouses was invented by Augustin-Jean Fresnel.", modality: "text" },
+        { id: "r2", url: "https://www.nps.gov/articles/fresnel-lens.htm", title: "Fresnel Lens — NPS", snippet: "Lighthouse keepers maintained the brass clockwork mechanism.", modality: "text" },
+        { id: "r3", url: "https://en.wikipedia.org/wiki/Lighthouse_keeper", title: "Lighthouse keeper — Wikipedia", snippet: "Keepers wore heavy oilskin storm coats against the North Sea spray.", modality: "text" },
+      ];
+      setResearch(demoRefs);
+      setResearchProgress("done");
+      setBible({
+        version: 1,
+        created_at: new Date().toISOString(),
+        logline: "An 1892 Scottish lighthouse keeper discovers a message in a bottle that changes his life.",
+        characters: [{ id: "c1", name: "Ewan MacAskill", age: 52, description: "A weathered, solitary Scottish lighthouse keeper.", voice_profile: "Gruff, sparse, Scottish brogue.", wardrobe: "Hand-waxed oilskin storm coat over a heavy-knit wool sweater.", reference_image_url: "/auteur/day1/character-reference.png", references: [demoRefs[2]] }],
+        locations: [{ id: "l1", name: "Skerryvore Lighthouse", description: "A remote stone lighthouse battered by the North Sea.", era: "1892", references: [demoRefs[0]] }],
+        wardrobes: [{ id: "w1", character_id: "c1", garment: "Oilskin storm coat", fabric: "Waxed cotton", color: "Dark oil-black" }],
+        voice_profiles: [{ id: "v1", character_id: "c1", voice_model: "gemini-2.5-flash-tts", voice_name: "Charon", description: "Weary, deep, Scottish brogue" }],
+        score_motifs: [{ id: "m1", name: "The Keeper's Vigil", prompt: "a slow mournful solo fiddle, scottish air, melancholic, distant waves", instrument: "Solo fiddle", mood: "Melancholic, isolated" }],
+        style_anchors: [{ id: "s1", color_grade: "Desaturated cold blues + warm amber lamp glow", aspect_ratio: "16:9", photographic_aesthetic: "Shallow depth of field, 50mm", mood: "Atmospheric, isolating" }],
+        story_beats: [
+          { id: "b1", order: 1, description: "Ewan walks the lamp room at dusk, polishing the lens." },
+          { id: "b2", order: 2, description: "He discovers a bottle on the rocks below at dawn." },
+          { id: "b3", order: 3, description: "He reads the message by candlelight." },
+          { id: "b4", order: 4, description: "He looks out to sea, transformed." },
+        ],
+        research_references: demoRefs,
+      });
+      setView("bible");
+    },
+  });
 
   return (
     <div className="auteur-grain flex min-h-screen flex-col bg-zinc-950 text-zinc-100">
@@ -70,11 +110,33 @@ export default function Page() {
 
           <div className="flex items-center gap-2">
             {health && (
-              <Badge variant="outline" className="hidden border-emerald-500/30 bg-emerald-500/10 text-emerald-300 sm:inline-flex">
-                <span className="mr-1 h-1.5 w-1.5 rounded-full bg-emerald-400 auteur-pulse" />
+              <button
+                onClick={() => setHealthPanelOpen(true)}
+                className="hidden items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20 sm:flex"
+                title="Backend status (press ?)"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 auteur-pulse" />
                 backend live
-              </Badge>
+              </button>
             )}
+            <button
+              onClick={() => setHealthPanelOpen(true)}
+              className="grid h-8 w-8 place-items-center rounded-md border border-zinc-700 bg-zinc-900 text-zinc-400 transition hover:text-zinc-200 sm:hidden"
+              aria-label="Backend status"
+            >
+              <Server className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => {
+                // trigger the demo load (same as pressing 'd')
+                const e = new KeyboardEvent('keydown', { key: 'd' });
+                window.dispatchEvent(e);
+              }}
+              className="hidden items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300 transition hover:bg-amber-500/20 md:flex"
+              title="Load canonical demo (press d)"
+            >
+              <Zap className="h-3 w-3" /> demo
+            </button>
             {project && (
               <Badge variant="outline" className="hidden border-zinc-700 text-zinc-400 md:inline-flex">
                 <span className="max-w-[160px] truncate font-mono text-[10px]">{project.id}</span>
@@ -165,7 +227,14 @@ export default function Page() {
           {view === "bible" && <BibleView />}
           {view === "shots" && <ShotListView />}
           {view === "render" && <RenderQueueView />}
-          {view === "grid" && <ShotGridView />}
+          {view === "grid" && <ShotGridView onShotClick={(s) => setDetailShot({
+            id: s.id,
+            label: `Shot ${s.id} — ${s.label}`,
+            scene: s.scene,
+            frame: s.frame,
+            scores: { face: s.score - 0.05, age: s.score, beard: s.score, wardrobe: s.score, overall: s.score },
+            notes: s.notes,
+          })} />}
           {view === "consistency" && <ConsistencyView />}
           {view === "assembly" && <AssemblyView />}
           {view === "share" && <ShareView />}
@@ -190,6 +259,12 @@ export default function Page() {
           </div>
         </div>
       </footer>
+
+      {/* Slide-over health panel (press ?) */}
+      <HealthPanel open={healthPanelOpen} onClose={() => setHealthPanelOpen(false)} />
+
+      {/* Shot detail dialog (click a shot in the grid) */}
+      <ShotDetailDialog shot={detailShot} open={!!detailShot} onOpenChange={(v) => !v && setDetailShot(null)} />
     </div>
   );
 }

@@ -63,6 +63,32 @@ export async function getHealth(): Promise<HealthStatus> {
 }
 
 // --------------------------------------------------------------------------- //
+// Director Agent (Table 38 — runtime endpoints)
+// --------------------------------------------------------------------------- //
+
+export interface BuildBibleResponse {
+  bible: FilmBible;
+  version: number;
+  references: Reference[];
+  references_count: number;
+  project_status: string;
+}
+
+export async function buildBible(projectId: string): Promise<BuildBibleResponse> {
+  return apiFetch<BuildBibleResponse>(`/api/projects/${projectId}/build-bible`, {
+    method: "POST",
+  });
+}
+
+export async function getResearch(projectId: string): Promise<{
+  references: Reference[];
+  references_count: number;
+  bible_version?: number;
+}> {
+  return apiFetch(`/api/projects/${projectId}/research`);
+}
+
+// --------------------------------------------------------------------------- //
 // Projects (Table 38 rows 1-2)
 // --------------------------------------------------------------------------- //
 

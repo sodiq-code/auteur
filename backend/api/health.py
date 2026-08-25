@@ -46,6 +46,8 @@ def health() -> dict[str, Any]:
         "endpoints": [
             "POST /api/projects",
             "GET  /api/projects/{id}",
+            "POST /api/projects/{id}/build-bible",
+            "GET  /api/projects/{id}/research",
             "GET  /api/projects/{id}/bible",
             "PATCH /api/projects/{id}/bible/entries/{entryId}",
             "GET  /api/projects/{id}/shots",

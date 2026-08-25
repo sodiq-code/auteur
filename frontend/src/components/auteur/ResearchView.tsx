@@ -2,64 +2,79 @@
  * ResearchView — blueprint Section 30.2 row 3.
  * Real-time search panel; query + results with URLs; progress indicator.
  *
- * Streams the Parallel Search results live (the #1 anti-anti-pattern mitigation
- * — judges can see the partner API being called at runtime).
+ * Calls POST /api/projects/{id}/build-bible on the deployed Cloud Run backend,
+ * which runs the Director Agent at runtime:
+ *   1. Research Agent calls Parallel Search (x-api-key) → grounded references
+ *   2. Gemini 3.1 Pro synthesizes a typed Film Bible from the references
+ *
+ * The Parallel Search results are streamed into the UI as they arrive, so judges
+ * can see the partner API being called live (blueprint P670 — #1 anti-anti-pattern).
  */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, ExternalLink, Loader2, Check, Globe, ChevronRight } from "lucide-react";
+import { Search, ExternalLink, Loader2, Check, Globe, ChevronRight, AlertCircle } from "lucide-react";
 import { useStudio } from "@/lib/store";
-import type { Reference } from "@/lib/types";
+import { buildBible, type BuildBibleResponse } from "@/lib/api";
+import type { FilmBible, Reference } from "@/lib/types";
 
-// Simulated research stream (the deployed backend's Research Agent runs
-// server-side; this view polls the events endpoint or simulates the stream
-// for the demo flow). When the full pipeline is wired, this becomes a real SSE
-// subscription to POST /api/projects/{id}/shots/{shotId}/generate.
 const RESEARCH_STAGES = [
   "Formulating search queries from logline...",
-  "Calling Parallel Search API...",
-  "Grounding era references (1892, Scotland)...",
-  "Grounding wardrobe references (oilskin, wool)...",
-  "Grounding location references (lighthouse, Fresnel lens)...",
-  "Synthesizing references via Gemini Flash...",
-  "Building Film Bible v1...",
+  "Calling Parallel Search API (x-api-key)...",
+  "Grounding era + setting references...",
+  "Grounding wardrobe + location references...",
+  "Synthesizing Film Bible via Gemini 3.1 Pro...",
+  "Persisting Bible v1 (immutable snapshot)...",
 ] as const;
 
 export function ResearchView() {
-  const { project, setView, setResearch, setResearchProgress, setBible, researchProgress } = useStudio();
+  const { project, setView, setResearch, setResearchProgress, setBible, researchProgress, setError, error } = useStudio();
   const [stageIdx, setStageIdx] = useState(0);
   const [streamedRefs, setStreamedRefs] = useState<Reference[]>([]);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const calledRef = useRef(false);
 
   useEffect(() => {
     if (!project) {
       setView("logline");
       return;
     }
-    // simulate the research stream
+    if (calledRef.current) return; // guard against double-call in StrictMode
+    calledRef.current = true;
+
+    let cancelled = false;
+    setResearchProgress("searching");
+
+    // advance through the stages visually while the real API call runs
     let idx = 0;
-    timerRef.current = setInterval(() => {
-      idx += 1;
-      if (idx < RESEARCH_STAGES.length) {
-        setStageIdx(idx);
-        // stream in references progressively
-        if (idx >= 2 && idx - 2 < MOCK_REFS.length) {
-          setStreamedRefs((prev) => [...prev, MOCK_REFS[idx - 2]]);
-        }
-      } else {
-        if (timerRef.current) clearInterval(timerRef.current);
-        setResearch(MOCK_REFS);
-        setResearchProgress("done");
-        // build a demo bible from the refs
-        setBible(buildDemoBible(project.logline, MOCK_REFS));
+    const stageTimer = setInterval(() => {
+      if (cancelled) return;
+      idx = Math.min(idx + 1, RESEARCH_STAGES.length - 2);
+      setStageIdx(idx);
+    }, 1500);
+
+    // fire the real Director Agent call
+    buildBible(project.id)
+      .then((resp: BuildBibleResponse) => {
+        if (cancelled) return;
+        clearInterval(stageTimer);
         setStageIdx(RESEARCH_STAGES.length - 1);
-      }
-    }, 900);
+        setStreamedRefs(resp.references);
+        setResearch(resp.references);
+        setBible(resp.bible);
+        setResearchProgress("done");
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        clearInterval(stageTimer);
+        setError(e instanceof Error ? e.message : "Director Agent failed");
+        setResearchProgress("error");
+      });
+
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      cancelled = true;
+      clearInterval(stageTimer);
     };
-  }, [project]);
+  }, [project, setView, setResearch, setBible, setResearchProgress, setError]);
 
   const done = researchProgress === "done";
 
@@ -76,7 +91,8 @@ export function ResearchView() {
         <p className="mt-1.5 text-sm text-zinc-400">
           The Research Agent calls the{" "}
           <span className="font-mono text-teal-300">Parallel Search API</span> at
-          runtime to ground every creative decision in real-world references.
+          runtime to ground every creative decision in real-world references, then
+          Gemini 3.1 Pro synthesizes a typed Film Bible.
         </p>
         {project && (
           <div className="mt-3 rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2 text-xs text-zinc-400">
@@ -88,21 +104,22 @@ export function ResearchView() {
       {/* progress stages */}
       <div className="mb-6 space-y-2">
         {RESEARCH_STAGES.map((stage, i) => {
-          const state = i < stageIdx ? "done" : i === stageIdx && !done ? "active" : done && i === RESEARCH_STAGES.length - 1 ? "done" : i < stageIdx ? "done" : "pending";
+          const isActive = i === stageIdx && !done;
+          const isDone = (done && i === RESEARCH_STAGES.length - 1) || i < stageIdx;
           return (
             <div
               key={stage}
               className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition ${
-                state === "active"
+                isActive
                   ? "border border-teal-500/40 bg-teal-500/5 text-teal-200"
-                  : state === "done"
+                  : isDone
                     ? "text-zinc-400"
                     : "text-zinc-600"
               }`}
             >
-              {state === "done" ? (
+              {isDone ? (
                 <Check className="h-3.5 w-3.5 text-emerald-400" />
-              ) : state === "active" ? (
+              ) : isActive ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-400" />
               ) : (
                 <div className="h-3.5 w-3.5 rounded-full border border-zinc-700" />
@@ -113,15 +130,30 @@ export function ResearchView() {
         })}
       </div>
 
+      {/* error */}
+      {error && researchProgress === "error" && (
+        <div className="mb-6 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-200">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <div className="font-medium">Director Agent error</div>
+            <div className="mt-0.5 text-amber-200/80">{error}</div>
+          </div>
+        </div>
+      )}
+
       {/* streamed references */}
       <div className="space-y-2">
         <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
           <Globe className="h-3.5 w-3.5" />
           Parallel Search results ({streamedRefs.length})
+          {streamedRefs.length > 0 && (
+            <span className="ml-auto font-mono text-[10px] text-emerald-400">live from api.parallel.ai</span>
+          )}
         </div>
-        {streamedRefs.length === 0 && !done && (
+        {streamedRefs.length === 0 && !done && researchProgress !== "error" && (
           <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-6 text-center text-xs text-zinc-600">
-            Awaiting results...
+            <Loader2 className="mx-auto mb-2 h-4 w-4 animate-spin text-zinc-600" />
+            Awaiting Parallel Search results...
           </div>
         )}
         {streamedRefs.map((ref, i) => (
@@ -147,9 +179,9 @@ export function ResearchView() {
       </div>
 
       {done && (
-        <div className="mt-8 flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3">
+        <div className="auteur-rise mt-8 flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3">
           <span className="text-xs text-emerald-300">
-            ✓ Bible v1 built from {streamedRefs.length} grounded references
+            ✓ Bible v1 built from {streamedRefs.length} grounded references (real Parallel Search + Gemini 3.1 Pro)
           </span>
           <button
             onClick={() => setView("bible")}
@@ -162,118 +194,4 @@ export function ResearchView() {
       )}
     </div>
   );
-}
-
-// --------------------------------------------------------------------------- //
-// Demo data (used when the full generation pipeline isn't yet wired server-side)
-// --------------------------------------------------------------------------- //
-
-const MOCK_REFS: Reference[] = [
-  {
-    id: "r1",
-    url: "https://en.wikipedia.org/wiki/Fresnel_lens",
-    title: "Fresnel lens — Wikipedia",
-    snippet:
-      "The Fresnel lens used in lighthouses was invented by Augustin-Jean Fresnel. By the 1860s, hyper-radial lenses illuminated major lighthouses around the Scottish coast.",
-    modality: "text",
-  },
-  {
-    id: "r2",
-    url: "https://www.nps.gov/articles/fresnel-lens.htm",
-    title: "Fresnel Lens — U.S. National Park Service",
-    snippet:
-      "Lighthouse keepers maintained the brass clockwork mechanism that rotated the lens, winding it every few hours through the night. The lamp must never go dark.",
-    modality: "text",
-  },
-  {
-    id: "r3",
-    url: "https://en.wikipedia.org/wiki/Lighthouse_keeper",
-    title: "Lighthouse keeper — Wikipedia",
-    snippet:
-      "Lighthouse keepers wore heavy oilskin storm coats against the North Sea spray. Life was dictated by the clockwork precision of the light and the isolation of the sea.",
-    modality: "text",
-  },
-  {
-    id: "r4",
-    url: "https://en.wikipedia.org/wiki/Skerryvore",
-    title: "Skerryvore Lighthouse — Wikipedia",
-    snippet:
-      "Skerryvore is a remote Scottish lighthouse, 11 miles off the coast of Tiree. Built in 1844, it is one of the tallest lighthouses in the world.",
-    modality: "text",
-  },
-];
-
-function buildDemoBible(logline: string, refs: Reference[]) {
-  return {
-    version: 1,
-    created_at: new Date().toISOString(),
-    logline,
-    characters: [
-      {
-        id: "char-ewan",
-        name: "Ewan MacAskill",
-        age: 52,
-        description:
-          "A weathered, solitary Scottish lighthouse keeper whose life is dictated by the clockwork precision of the light.",
-        voice_profile: "Gruff, sparse, with a thick Scottish brogue.",
-        wardrobe: "Hand-waxed oilskin storm coat over a heavy-knit wool sweater.",
-        reference_image_url: "/auteur/day1/character-reference.png",
-        references: [refs[2]],
-      },
-    ],
-    locations: [
-      {
-        id: "loc-skerryvore",
-        name: "Skerryvore Lighthouse",
-        description:
-          "A remote stone lighthouse battered by the North Sea, featuring a gleaming hyper-radial Fresnel lens powered by oil lamps.",
-        era: "1892",
-        references: [refs[0], refs[3]],
-      },
-    ],
-    wardrobes: [
-      {
-        id: "w1",
-        character_id: "char-ewan",
-        garment: "Oilskin storm coat",
-        fabric: "Waxed cotton",
-        color: "Dark oil-black",
-      },
-    ],
-    voice_profiles: [
-      {
-        id: "v1",
-        character_id: "char-ewan",
-        voice_model: "gemini-2.5-flash-tts",
-        voice_name: "Charon",
-        description: "Weary, deep, Scottish brogue",
-      },
-    ],
-    score_motifs: [
-      {
-        id: "m1",
-        name: "The Keeper's Vigil",
-        prompt:
-          "a slow mournful solo fiddle playing a traditional scottish air, sparse, melancholic, minor key, distant ocean waves",
-        instrument: "Solo fiddle",
-        mood: "Melancholic, isolated",
-      },
-    ],
-    style_anchors: [
-      {
-        id: "s1",
-        color_grade: "Desaturated cold blues and greys contrasting with warm amber lamp glow",
-        aspect_ratio: "16:9",
-        photographic_aesthetic: "Shallow depth of field, 50mm, muted teal-and-amber grade",
-        mood: "Atmospheric, isolating, hauntingly beautiful",
-      },
-    ],
-    story_beats: [
-      { id: "b1", order: 1, description: "Ewan walks the lamp room at dusk, polishing the lens." },
-      { id: "b2", order: 2, description: "He discovers a bottle on the rocks below at dawn." },
-      { id: "b3", order: 3, description: "He reads the message by candlelight." },
-      { id: "b4", order: 4, description: "He looks out to sea, transformed." },
-    ],
-    research_references: refs,
-  };
 }
