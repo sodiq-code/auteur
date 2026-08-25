@@ -26,7 +26,7 @@ from .schema import FilmBible, Project, ShotSpec
 # --------------------------------------------------------------------------- #
 
 FIRESTORE_PROJECT = os.environ.get("GCP_PROJECT_ID", "auteur-506523")
-FIRESTORE_DATABASE = os.environ.get("FIRESTORE_DATABASE", "(default)")
+FIRESTORE_DATABASE = os.environ.get("FIRESTORE_DATABASE", "auteur")  # created on the project
 
 
 # --------------------------------------------------------------------------- #

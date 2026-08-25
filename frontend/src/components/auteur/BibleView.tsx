@@ -1,16 +1,17 @@
 /**
  * BibleView — blueprint Section 30.2 row 4.
  * Tabbed: Characters | Locations | Wardrobe | Voice | Score | Style | Beats;
- * per-entry edit; version history.
+ * per-entry edit (inline, creates a new version via PATCH); version history.
  */
 "use client";
 
 import { useState } from "react";
 import {
   User, MapPin, Shirt, Mic, Music, Palette, ListOrdered,
-  ChevronRight, ExternalLink, BookOpen,
+  ChevronRight, ExternalLink, BookOpen, Pencil, Check, X, Loader2,
 } from "lucide-react";
 import { useStudio } from "@/lib/store";
+import { editBibleEntry } from "@/lib/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
@@ -27,10 +28,27 @@ const TABS = [
 ] as const;
 
 export function BibleView() {
-  const { bible, setView } = useStudio();
+  const { bible, project, setView, setBible } = useStudio();
+  const [editing, setEditing] = useState<{ entryId: string; field: string; value: string } | null>(null);
+  const [saving, setSaving] = useState(false);
 
   if (!bible) {
     return <div className="p-8 text-sm text-zinc-500">No Bible yet.</div>;
+  }
+
+  async function handleSaveEdit() {
+    if (!editing || !project) return;
+    setSaving(true);
+    try {
+      const resp = await editBibleEntry(project.id, editing.entryId, editing.field, editing.value);
+      setBible(resp.bible);
+      setEditing(null);
+    } catch (e) {
+      console.error("edit failed:", e);
+      setEditing(null);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -88,16 +106,59 @@ export function BibleView() {
                   </div>
                 )}
                 <div className="flex items-baseline justify-between">
-                  <h3 className="font-semibold text-zinc-100">{c.name}</h3>
+                  <EditableField
+                    entryId={c.id}
+                    field="name"
+                    value={c.name}
+                    editing={editing}
+                    setEditing={setEditing}
+                    onSave={handleSaveEdit}
+                    saving={saving}
+                    className="font-semibold text-zinc-100"
+                  />
                   {c.age && <span className="text-xs text-zinc-500">age {c.age}</span>}
                 </div>
-                <p className="mt-1.5 text-xs text-zinc-400">{c.description}</p>
+                <EditableField
+                  entryId={c.id}
+                  field="description"
+                  value={c.description}
+                  editing={editing}
+                  setEditing={setEditing}
+                  onSave={handleSaveEdit}
+                  saving={saving}
+                  className="mt-1.5 text-xs text-zinc-400"
+                  multiline
+                />
                 <dl className="mt-3 space-y-1 text-[11px]">
                   {c.voice_profile && (
-                    <div><dt className="inline text-zinc-500">Voice: </dt><dd className="inline text-zinc-300">{c.voice_profile}</dd></div>
+                    <div>
+                      <dt className="inline text-zinc-500">Voice: </dt>
+                      <EditableField
+                        entryId={c.id}
+                        field="voice_profile"
+                        value={c.voice_profile}
+                        editing={editing}
+                        setEditing={setEditing}
+                        onSave={handleSaveEdit}
+                        saving={saving}
+                        className="inline text-zinc-300"
+                      />
+                    </div>
                   )}
                   {c.wardrobe && (
-                    <div><dt className="inline text-zinc-500">Wardrobe: </dt><dd className="inline text-zinc-300">{c.wardrobe}</dd></div>
+                    <div>
+                      <dt className="inline text-zinc-500">Wardrobe: </dt>
+                      <EditableField
+                        entryId={c.id}
+                        field="wardrobe"
+                        value={c.wardrobe}
+                        editing={editing}
+                        setEditing={setEditing}
+                        onSave={handleSaveEdit}
+                        saving={saving}
+                        className="inline text-zinc-300"
+                      />
+                    </div>
                   )}
                 </dl>
                 {c.references && c.references.length > 0 && <RefList refs={c.references} />}
@@ -237,5 +298,73 @@ function RefList({ refs }: { refs: Reference[] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+interface EditableFieldProps {
+  entryId: string;
+  field: string;
+  value: string;
+  editing: { entryId: string; field: string; value: string } | null;
+  setEditing: (e: { entryId: string; field: string; value: string } | null) => void;
+  onSave: () => void;
+  saving: boolean;
+  className?: string;
+  multiline?: boolean;
+}
+
+function EditableField({
+  entryId, field, value, editing, setEditing, onSave, saving, className, multiline,
+}: EditableFieldProps) {
+  const isEditing = editing?.entryId === entryId && editing?.field === field;
+  const editValue = isEditing ? editing!.value : value;
+
+  if (isEditing) {
+    return (
+      <span className={`inline-flex items-center gap-1 ${className || ""}`}>
+        {multiline ? (
+          <textarea
+            autoFocus
+            value={editValue}
+            onChange={(e) => setEditing({ entryId, field, value: e.target.value })}
+            onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) onSave(); if (e.key === "Escape") setEditing(null); }}
+            rows={2}
+            className="w-full resize-none rounded border border-teal-500/50 bg-zinc-950 px-1.5 py-0.5 text-xs text-zinc-100 outline-none"
+          />
+        ) : (
+          <input
+            autoFocus
+            value={editValue}
+            onChange={(e) => setEditing({ entryId, field, value: e.target.value })}
+            onKeyDown={(e) => { if (e.key === "Enter") onSave(); if (e.key === "Escape") setEditing(null); }}
+            className="rounded border border-teal-500/50 bg-zinc-950 px-1.5 py-0.5 text-xs text-zinc-100 outline-none"
+          />
+        )}
+        <button
+          onClick={onSave}
+          disabled={saving}
+          className="grid h-5 w-5 place-items-center rounded bg-teal-500 text-zinc-950 disabled:opacity-50"
+        >
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+        </button>
+        <button
+          onClick={() => setEditing(null)}
+          disabled={saving}
+          className="grid h-5 w-5 place-items-center rounded border border-zinc-700 text-zinc-400"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <span
+      onClick={() => setEditing({ entryId, field, value })}
+      className={`group inline cursor-pointer rounded hover:bg-zinc-800/50 ${className || ""}`}
+    >
+      {value}
+      <Pencil className="ml-1 inline h-2.5 w-2.5 text-zinc-600 opacity-0 transition group-hover:opacity-100" />
+    </span>
   );
 }
