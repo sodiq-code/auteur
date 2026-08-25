@@ -79,10 +79,15 @@ SA_KEY = os.environ.get(
 #   blueprint "Veo 3.1 Standard" -> veo-3.1-generate-001      (supports ASSET ref)
 #   For Day 1 validation we use the FAST tier (cheaper than Standard, still supports
 #   the ASSET character reference). Standard is reserved for final demo renders.
-#   blueprint "Gemini 2.5 Pro"  -> gemini-2.5-pro
-IMAGE_MODEL = "gemini-3-pro-image"        # blueprint "Imagen 3" -> newest accessible (global region)
-VEO_MODEL = "veo-3.1-fast-generate-001"   # blueprint "Veo 3.1" w/ ASSET ref (Lite lacks it)
-VISION_MODEL = "gemini-2.5-pro"           # consistency check (blueprint Table 31)
+#   blueprint "Gemini 2.5 Pro"  -> gemini-3.1-pro-preview
+#                                  (gemini-2.5-pro works but is older; gemini-3-pro-preview
+#                                   404s on this project; gemini-3.1-pro-preview is the
+#                                   newest accessible Pro model — text + vision both work
+#                                   in the `global` region. Used for Director Agent
+#                                   orchestration (Day 6+) + Consistency Check vision.)
+IMAGE_MODEL = "gemini-3-pro-image"         # blueprint "Imagen 3" -> newest accessible (global region)
+VEO_MODEL = "veo-3.1-fast-generate-001"    # blueprint "Veo 3.1" w/ ASSET ref (Lite lacks it)
+VISION_MODEL = "gemini-3.1-pro-preview"    # blueprint "Gemini 2.5 Pro" -> newest accessible Pro (global)
 
 # The canonical character: Ewan, the 1892 lighthouse keeper (blueprint Table 25).
 CHARACTER_NAME = "Ewan"
@@ -182,6 +187,11 @@ def get_client(region: str | None = None):
 def get_image_client():
     """Image model (gemini-3-pro-image) is only accessible in the `global` region."""
     return get_client(region=IMAGE_LOCATION)
+
+
+def get_vision_client():
+    """Vision/Pro model (gemini-3.1-pro-preview) is only accessible in the `global` region."""
+    return get_client(region=IMAGE_LOCATION)  # same `global` region as the image model
 
 
 # --------------------------------------------------------------------------- #
@@ -530,9 +540,9 @@ def build_side_by_side(char_ref: Path, frames: list[Path], out_png: Path) -> Non
 # Step 5 — Gemini-Vision consistency check (drift score per shot + verdict)
 # --------------------------------------------------------------------------- #
 
-def consistency_check(client, char_ref_path: Path, frame_paths: list[Path]) -> dict:
+def consistency_check(vision_client, char_ref_path: Path, frame_paths: list[Path]) -> dict:
     from google.genai import types
-    log("VISION", f"Running consistency check via {VISION_MODEL}...")
+    log("VISION", f"Running consistency check via {VISION_MODEL} (region={IMAGE_LOCATION})...")
 
     # Build multimodal content: char ref + 4 frames, with a structured prompt
     parts = [
@@ -579,7 +589,7 @@ def consistency_check(client, char_ref_path: Path, frame_paths: list[Path]) -> d
         temperature=0.2,
     )
     try:
-        resp = client.models.generate_content(
+        resp = vision_client.models.generate_content(
             model=VISION_MODEL,
             contents=[instruction] + parts,
             config=config,
@@ -605,8 +615,9 @@ def main() -> int:
     log("MAIN", f"Project={PROJECT_ID}  Location={LOCATION}  Image location={IMAGE_LOCATION}")
     log("MAIN", f"Image model={IMAGE_MODEL}  Veo model={VEO_MODEL}  Vision model={VISION_MODEL}")
 
-    client = get_client()                 # Veo + Gemini Pro (vision) — us-central1
+    client = get_client()                 # Veo — us-central1
     image_client = get_image_client()      # gemini-3-pro-image — global region
+    vision_client = get_vision_client()    # gemini-3.1-pro-preview — global region
 
     manifest: dict[str, Any] = {
         "task": "Day 1 — Veo 3.1 cross-shot character consistency validation",
@@ -689,8 +700,17 @@ def main() -> int:
         manifest["side_by_side_error"] = str(e)[:300]
 
     # Step 5 — vision consistency check
-    vision = consistency_check(client, char_ref_path, frames)
+    vision = consistency_check(vision_client, char_ref_path, frames)
     manifest["consistency_check"] = vision
+    manifest["vision_model"] = VISION_MODEL
+    manifest["vision_model_note"] = (
+        "Blueprint specifies Gemini 2.5 Pro (Table 31) for the Consistency Check "
+        "Agent + Director Agent. gemini-2.5-pro works but is the older generation. "
+        "gemini-3-pro-preview 404s on this project; gemini-3.1-pro-preview is the "
+        "newest accessible Pro model (text + vision), available only in the `global` "
+        "region. Used here for the consistency check; will also be the Director "
+        "Agent's reasoning model (Day 6+)."
+    )
 
     # verdict
     verdict = vision.get("verdict", "UNKNOWN") if isinstance(vision, dict) else "UNKNOWN"
@@ -732,7 +752,9 @@ def write_manifest_and_report(manifest: dict, side_by_side, vision) -> None:
                  "(blueprint 'Veo 3.1 Light' tier).\n")
     lines.append(f"- **Reference mechanism:** `reference_images` with "
                  f"`reference_type=ASSET` — the Veo 3.1 persistent subject reference.\n")
-    lines.append(f"- **Consistency check:** `gemini-2.5-pro` (vision).\n")
+    lines.append(f"- **Consistency check:** `{manifest.get('vision_model','gemini-3.1-pro-preview')}` "
+                 f"(vision; blueprint Table 31 specifies Gemini 2.5 Pro — upgraded to the newest "
+                 f"accessible Pro model, in region `{manifest.get('image_location','global')}`).\n")
     lines.append("## Shots\n")
     lines.append("| # | Scene | Status | Elapsed (s) | Size (bytes) |\n")
     lines.append("|---|-------|--------|-------------|--------------|\n")

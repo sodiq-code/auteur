@@ -22,7 +22,7 @@ from day1_validate_consistency import (
     IMAGE_MODEL, VEO_MODEL, VISION_MODEL,
     VEO_DURATION_SECONDS, VEO_ASPECT_RATIO, VEO_RESOLUTION, VEO_GENERATE_AUDIO,
     OUTPUT_DIR, DOCS_DIR, SCENES,
-    get_client, get_image_client,
+    get_client, get_image_client, get_vision_client,
     generate_veo_clip, extract_representative_frame,
     build_side_by_side, consistency_check, write_manifest_and_report, log,
 )
@@ -56,6 +56,7 @@ def main() -> int:
         return 2
 
     client = get_client()
+    vision_client = get_vision_client()  # gemini-3.1-pro-preview — global region
 
     # Load existing manifest
     manifest_path = OUTPUT_DIR / "day1-manifest.json"
@@ -102,8 +103,13 @@ def main() -> int:
     manifest["side_by_side"] = str(side_by_side)
 
     # Re-run consistency check
-    vision = consistency_check(client, char_ref, frames)
+    vision = consistency_check(vision_client, char_ref, frames)
     manifest["consistency_check"] = vision
+    manifest["vision_model"] = VISION_MODEL
+    manifest["vision_model_note"] = (
+        "Blueprint specifies Gemini 2.5 Pro (Table 31). Upgraded to gemini-3.1-pro-preview "
+        "(newest accessible Pro model, text + vision, `global` region)."
+    )
     verdict = vision.get("verdict", "UNKNOWN") if isinstance(vision, dict) else "UNKNOWN"
     manifest["verdict"] = verdict
     manifest["definition_of_done"] = {

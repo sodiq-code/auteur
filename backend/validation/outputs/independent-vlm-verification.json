@@ -4,25 +4,25 @@
       "finish_reason": "stop",
       "index": 0,
       "message": {
-        "content": "**Verdict:** CONSISTENT\n**Score:** 0.9\n**Sentence:** The character maintains a highly consistent appearance across all four shots, with the salt-and-pepper beard, facial structure, and oilskin coat remaining clearly recognizable despite varying lighting conditions and camera angles.",
+        "content": "CONSISTENT, 0.9, The character maintains a highly consistent appearance across all four shots with recognizable facial features, salt-and-pepper beard, and oilskin coat despite varying lighting conditions and angles.",
         "role": "assistant"
       }
     }
   ],
-  "created": 1787620302,
-  "id": "202608250911409295b7fd0c554d9e",
+  "created": 1787621099,
+  "id": "202608250924576da6387cced249ca",
   "model": "glm-5v-turbo",
   "object": "chat.completion",
-  "request_id": "202608250911409295b7fd0c554d9e",
+  "request_id": "202608250924576da6387cced249ca",
   "usage": {
-    "completion_tokens": 58,
+    "completion_tokens": 43,
     "completion_tokens_details": {
       "reasoning_tokens": 0
     },
     "prompt_tokens": 2489,
     "prompt_tokens_details": {
-      "cached_tokens": 3
+      "cached_tokens": 2
     },
-    "total_tokens": 2547
+    "total_tokens": 2532
   }
 }

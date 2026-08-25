@@ -39,7 +39,7 @@ proof is immediate, undeniable, and impossible to forget.
 
 | Layer | Choice | Why |
 |------|--------|-----|
-| LLM (orchestration + vision) | Gemini 2.5 Pro via Vertex AI | REQUIRED by rules; best frontier model |
+| LLM (orchestration + vision) | gemini-3.1-pro-preview via Vertex AI (global region) | REQUIRED by rules; best frontier model |
 | Agent framework | Google Agent Development Kit (ADK) | REQUIRED by rules (stack lock) |
 | Video | Veo 3.1 (Light for iteration, Standard for final) | REQUIRED + best fit (character ref images) |
 | Voice | Chirp 3 | REQUIRED + best fit |
@@ -51,6 +51,8 @@ proof is immediate, undeniable, and impossible to forget.
 | Partner integration | **Parallel Search API** (called at runtime, visible in UI) | Grounded imagination |
 
 > **Image-model note:** the blueprint specifies Imagen 3 for character reference / storyboard generation. On the project used for this submission (`auteur-506523`), Imagen 3 is deprecated AND the 3.x Gemini image models are listed but ONLY accessible in the `global` region (they 404 in `us-central1`). `gemini-3-pro-image` (Pro tier, 3.x generation) is the newest accessible Google Cloud image model — used here via `generate_content(response_modalities=["IMAGE"])` in the `global` region. The iteration tier for storyboards (Day 7+) is `gemini-3.1-flash-image`. See `docs/validation-day-1-report.md` for the full Day-1 model discovery.
+
+> **LLM-model note:** the blueprint specifies Gemini 2.5 Pro (Table 31) for the Director Agent and the Consistency Check. `gemini-2.5-pro` works but is the older generation. `gemini-3-pro-preview` 404s on this project; `gemini-3.1-pro-preview` is the newest accessible Pro model (text + vision), available only in the `global` region. Used for the Consistency Check here; will be the Director Agent's reasoning model (Day 6+).
 
 ## Partner-track declaration
 

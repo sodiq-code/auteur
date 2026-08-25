@@ -6,28 +6,28 @@ Validate that Veo 3.1 can produce visibly consistent characters across 4 shots i
 - **Character reference image:** `gemini-3-pro-image` (blueprint specifies Imagen 3; on this project Imagen 3 is deprecated and the 3.x Gemini image models are only accessible in the `global` region — `gemini-3-pro-image` is the newest accessible, Pro-tier, used here in region `global`).
 - **Video generation:** `veo-3.1-fast-generate-001` (blueprint 'Veo 3.1 Light' tier).
 - **Reference mechanism:** `reference_images` with `reference_type=ASSET` — the Veo 3.1 persistent subject reference.
-- **Consistency check:** `gemini-2.5-pro` (vision).
+- **Consistency check:** `gemini-3.1-pro-preview` (vision; blueprint Table 31 specifies Gemini 2.5 Pro — upgraded to the newest accessible Pro model, in region `global`).
 ## Shots
 | # | Scene | Status | Elapsed (s) | Size (bytes) |
 |---|-------|--------|-------------|--------------|
-| 1 | Lamp Room (interior, dusk) | ok | 31.6 | 3625956 |
+| 1 | Lamp Room (interior, dusk) — face-visible | ok | 44.8 | 3355766 |
 | 2 | Rocks (coastal, dawn) — medium shot | ok | 44.9 | 3747553 |
 | 3 | Interior (candlelight, reading) | ok | 43.8 | 3538234 |
 | 4 | Exterior (balcony, stormy sea, dusk) | ok | 44.7 | 3834565 |
 
 ## Verdict
 **GO**
-- Mean overall consistency: **0.815**
+- Mean overall consistency: **0.925**
 - Drift threshold: 0.25
-- Rationale: Character identity is held with near-perfect fidelity in Shots 3 and 4. While Shots 1 and 2 have obscured views that prevent full facial confirmation, they maintain strong consistency in wardrobe, context, and visible partial features, and introduce no contradictory information. The overall result is a successful and consistent character portrayal.
+- Rationale: The character's facial features, age, distinctive salt-and-pepper beard, and specific wardrobe (oilskin coat and cable-knit sweater) remain highly consistent across all four shots, despite changes in lighting, angle, and pose.
 
 ### Per-shot drift
 | Shot | Scene | face | age | beard | wardrobe | overall |
 |------|-------|------|-----|-------|----------|---------|
-| 1 | Man polishing the lens of a lighthouse lamp. | 0.6 | 0.7 | 0.5 | 1.0 | 0.7 |
-| 2 | Man crouching on wet rocks, placing a green bottle in a tide pool. | 0.0 | 0.7 | 0.8 | 1.0 | 0.6 |
-| 3 | Man sitting at a wooden table, looking down at a map with a lantern. | 0.95 | 1.0 | 1.0 | 1.0 | 0.98 |
-| 4 | Man standing on top of a lighthouse, holding a lantern up against a stormy sky. | 0.95 | 1.0 | 1.0 | 1.0 | 0.98 |
+| 1 | Cleaning the lighthouse lens | 0.95 | 0.95 | 0.95 | 0.95 | 0.95 |
+| 2 | Crouching on rocks by the sea | 0.8 | 0.9 | 0.9 | 0.9 | 0.85 |
+| 3 | Sitting at a table looking at a document | 0.95 | 0.95 | 0.95 | 0.95 | 0.95 |
+| 4 | Standing outside by the sea holding a lantern | 0.95 | 0.95 | 0.95 | 0.95 | 0.95 |
 
 ## Artifacts
 - Side-by-side: `docs/validation-day-1.png`
