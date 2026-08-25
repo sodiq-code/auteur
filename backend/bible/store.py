@@ -179,6 +179,48 @@ async def get_shots(project_id: str) -> list[ShotSpec]:
 
 
 # --------------------------------------------------------------------------- #
+# Generations (the MP4/WAV bytes from Veo/Chirp/Lyria — for assembly)
+# --------------------------------------------------------------------------- #
+
+_GENERATIONS: dict[str, dict[str, Any]] = {}  # key = {projectId}_{shotId}_{modality}
+
+
+def _gen_key(project_id: str, shot_id: str, modality: str) -> str:
+    return f"{project_id}_{shot_id}_{modality}"
+
+
+async def save_generation(project_id: str, shot_id: str, modality: str, data: dict[str, Any]) -> None:
+    """Persist a generation result (incl. MP4/WAV bytes) for later assembly.
+
+    NOTE: for the hackathon, large binary blobs (MP4/WAV) are stored in-memory
+    (per Cloud Run instance) rather than Firestore (which has a 1MB doc limit).
+    Cloud Storage is the production path; the in-memory store is sufficient for
+    the demo flow within a single instance (min-instances=1).
+    """
+    key = _gen_key(project_id, shot_id, modality)
+    _GENERATIONS[key] = data
+    # also log to Firestore events (without the large bytes)
+    await log_event(project_id, "generation_saved", {
+        "shotId": shot_id, "modality": modality,
+        "size_bytes": data.get("size_bytes", 0),
+    })
+
+
+async def get_generation(project_id: str, shot_id: str, modality: str) -> dict[str, Any] | None:
+    """Retrieve a generation result by project + shot + modality."""
+    return _GENERATIONS.get(_gen_key(project_id, shot_id, modality))
+
+
+async def get_all_generations(project_id: str) -> list[dict[str, Any]]:
+    """Get all generation results for a project (for the render queue + assembly)."""
+    return [
+        {**v, "shot_id": k.split("_")[1], "modality": k.split("_")[2]}
+        for k, v in _GENERATIONS.items()
+        if k.startswith(f"{project_id}_")
+    ]
+
+
+# --------------------------------------------------------------------------- #
 # Search cache (24h TTL — blueprint Table 28 row 2 / 24.4)
 # --------------------------------------------------------------------------- #
 

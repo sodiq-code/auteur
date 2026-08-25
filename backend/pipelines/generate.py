@@ -116,12 +116,19 @@ async def _run_veo(project_id: str, shot: ShotSpec, prompt: str, char_ref: bytes
             generate_audio=False,
         )
         elapsed = round(time.time() - t0, 2)
-        # Upload to Cloud Storage
+        # Persist the MP4 bytes for assembly (in-memory store; Cloud Storage optional)
+        await store.save_generation(project_id, shot.id, "veo", {
+            "mp4_bytes": mp4,
+            "size_bytes": len(mp4),
+            "elapsed_sec": elapsed,
+            "model": veo.VEO_MODEL_FAST,
+        })
+        # Upload to Cloud Storage (optional)
         blob_name = f"{project_id}/{shot.id}_veo.mp4"
         try:
             uri = cloud_storage.upload_bytes(blob_name, mp4, content_type="video/mp4")
         except Exception:
-            uri = None  # storage optional for dev
+            uri = None
         await store.log_event(project_id, "generation_completed", {
             "shotId": shot.id, "modality": "veo", "elapsed_sec": elapsed,
             "size_bytes": len(mp4), "uri": uri,

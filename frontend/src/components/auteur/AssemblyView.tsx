@@ -1,19 +1,49 @@
 /**
  * AssemblyView — blueprint Section 30.2 row 10.
- * 30-second MP4 player; export buttons (MP4, Bible JSON, Shot CSV); share link.
+ * Final film preview + export buttons (MP4, Bible JSON, Shot CSV); share link.
+ *
+ * Calls POST /api/projects/{id}/assemble to run ffmpeg concatenation on the
+ * backend, then streams the assembled MP4 via GET /api/projects/{id}/film.
  */
 "use client";
 
 import { useState } from "react";
-import { Clapperboard, Download, Share2, Play, FileJson, FileText, Film, Check } from "lucide-react";
+import { Clapperboard, Download, Share2, Play, FileJson, FileText, Film, Check, Loader2 } from "lucide-react";
 import { useStudio } from "@/lib/store";
 import { Badge } from "@/components/ui/badge";
-import { createShareLink, exportBible } from "@/lib/api";
+import { assembleFilm, createShareLink, exportBible } from "@/lib/api";
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "https://auteur-dev-jbkbgthudq-uc.a.run.app";
 
 export function AssemblyView() {
-  const { project, bible, setView, setShareSlug, shareSlug } = useStudio();
+  const { project, bible, setView, setShareSlug } = useStudio();
+  const [assembling, setAssembling] = useState(false);
+  const [filmUrl, setFilmUrl] = useState<string | null>(null);
+  const [filmInfo, setFilmInfo] = useState<{ duration?: number; size?: number; clips?: number } | null>(null);
   const [exporting, setExporting] = useState(false);
   const [sharing, setSharing] = useState(false);
+
+  async function handleAssemble() {
+    if (!project) return;
+    setAssembling(true);
+    try {
+      const result = await assembleFilm(project.id);
+      if (result.status === "ok") {
+        setFilmUrl(`${API_BASE}/api/projects/${project.id}/film`);
+        setFilmInfo({
+          duration: result.duration_seconds,
+          size: result.size_bytes,
+          clips: result.clip_count,
+        });
+      }
+    } catch (e) {
+      console.error("assembly failed:", e);
+    } finally {
+      setAssembling(false);
+    }
+  }
 
   async function handleExportBible() {
     if (!project) return;
@@ -42,7 +72,6 @@ export function AssemblyView() {
       setShareSlug(result.public_slug);
       setView("share");
     } catch (e) {
-      // fallback: generate a local slug
       setShareSlug(Math.random().toString(36).substring(2, 10));
       setView("share");
     } finally {
@@ -57,38 +86,63 @@ export function AssemblyView() {
           <Clapperboard className="h-3.5 w-3.5 text-teal-400" />
           Step 8 — Assembly
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Your film is ready</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">
+          {filmUrl ? "Your film is ready" : "Assemble your film"}
+        </h2>
         <p className="mt-1.5 text-sm text-zinc-400">
-          4 shots assembled via ffmpeg into a single 32-second short film, with
-          Chirp 3 voiceover and Lyria 2 score.
+          {filmUrl
+            ? "ffmpeg concatenated the generated Veo clips into a single MP4."
+            : "Concatenate the generated Veo clips into a single short film via ffmpeg."}
         </p>
       </div>
 
       {/* film preview */}
       <div className="relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
         <div className="relative aspect-video">
-          <div className="absolute inset-0 grid grid-cols-2 gap-0.5">
-            {["/auteur/day1/shot-1.png", "/auteur/day1/shot-2.png", "/auteur/day1/shot-3.png", "/auteur/day1/shot-4.png"].map((src, i) => (
-              <div key={i} className="relative overflow-hidden">
-                <img src={src} alt={`Shot ${i + 1}`} className="h-full w-full object-cover" />
-              </div>
-            ))}
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-transparent" />
-          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="grid h-10 w-10 place-items-center rounded-full bg-teal-500/90 backdrop-blur transition hover:bg-teal-400">
-                <Play className="h-4 w-4 fill-zinc-950 text-zinc-950" />
-              </div>
-              <div className="text-xs text-zinc-300">
-                <div className="font-medium">Ewan&apos;s Vigil</div>
-                <div className="text-[10px] text-zinc-500">4 shots · 32s · 1280×720</div>
+          {filmUrl ? (
+            <video
+              src={filmUrl}
+              controls
+              className="h-full w-full"
+              autoPlay
+              loop
+              muted
+            />
+          ) : (
+            <div className="grid h-full grid-cols-2 gap-0.5">
+              {["/auteur/day1/shot-1.png", "/auteur/day1/shot-2.png", "/auteur/day1/shot-3.png", "/auteur/day1/shot-4.png"].map((src, i) => (
+                <div key={i} className="relative overflow-hidden">
+                  <img src={src} alt={`Shot ${i + 1}`} className="h-full w-full object-cover opacity-60" />
+                </div>
+              ))}
+              <div className="absolute inset-0 grid place-items-center bg-zinc-950/60">
+                <button
+                  onClick={handleAssemble}
+                  disabled={assembling || !project}
+                  className="inline-flex items-center gap-2 rounded-lg bg-teal-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-teal-400 disabled:opacity-50"
+                >
+                  {assembling ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
+                  {assembling ? "Assembling..." : "Assemble film"}
+                </button>
               </div>
             </div>
-            <Badge className="border-0 bg-emerald-500/15 text-emerald-300">
-              <Check className="mr-1 h-3 w-3" /> assembled
-            </Badge>
-          </div>
+          )}
+          {filmUrl && (
+            <div className="absolute bottom-3 left-3 flex items-center gap-2">
+              <Badge className="border-0 bg-emerald-500/15 text-emerald-300">
+                <Check className="mr-1 h-3 w-3" /> assembled
+              </Badge>
+              {filmInfo?.duration && (
+                <span className="rounded bg-zinc-950/80 px-2 py-0.5 font-mono text-[10px] text-zinc-300 backdrop-blur">
+                  {filmInfo.duration}s · {filmInfo.clips} clips
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -96,26 +150,35 @@ export function AssemblyView() {
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <button
           onClick={handleExportBible}
-          disabled={exporting}
+          disabled={exporting || !bible}
           className="flex flex-col items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/40 p-3 transition hover:border-zinc-700 hover:bg-zinc-900 disabled:opacity-50"
         >
-          <FileJson className="h-5 w-5 text-teal-400" />
+          {exporting ? <Loader2 className="h-5 w-5 animate-spin text-teal-400" /> : <FileJson className="h-5 w-5 text-teal-400" />}
           <span className="text-[11px] text-zinc-300">Bible JSON</span>
         </button>
-        <button className="flex flex-col items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/40 p-3 transition hover:border-zinc-700 hover:bg-zinc-900">
+        <a
+          href={project ? `${API_BASE}/api/projects/${project.id}/export/shots` : "#"}
+          className="flex flex-col items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/40 p-3 transition hover:border-zinc-700 hover:bg-zinc-900"
+        >
           <FileText className="h-5 w-5 text-amber-400" />
           <span className="text-[11px] text-zinc-300">Shot CSV</span>
-        </button>
-        <button className="flex flex-col items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/40 p-3 transition hover:border-zinc-700 hover:bg-zinc-900">
-          <Film className="h-5 w-5 text-purple-400" />
-          <span className="text-[11px] text-zinc-300">MP4</span>
-        </button>
+        </a>
+        {filmUrl && (
+          <a
+            href={filmUrl}
+            download="auteur_film.mp4"
+            className="flex flex-col items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/40 p-3 transition hover:border-zinc-700 hover:bg-zinc-900"
+          >
+            <Film className="h-5 w-5 text-purple-400" />
+            <span className="text-[11px] text-zinc-300">MP4</span>
+          </a>
+        )}
         <button
           onClick={handleShare}
-          disabled={sharing}
+          disabled={sharing || !filmUrl}
           className="flex flex-col items-center gap-1.5 rounded-lg border border-teal-500/40 bg-teal-500/10 p-3 transition hover:bg-teal-500/20 disabled:opacity-50"
         >
-          <Share2 className="h-5 w-5 text-teal-300" />
+          {sharing ? <Loader2 className="h-5 w-5 animate-spin text-teal-300" /> : <Share2 className="h-5 w-5 text-teal-300" />}
           <span className="text-[11px] text-teal-200">Share</span>
         </button>
       </div>
