@@ -1,0 +1,9 @@
+{
+  "service": "auteur-dev",
+  "region": "us-central1",
+  "url": "https://auteur-dev-jbkbgthudq-uc.a.run.app",
+  "health_url": "https://auteur-dev-jbkbgthudq-uc.a.run.app/api/health",
+  "image": "us-central1-docker.pkg.dev/auteur-506523/auteur/auteur-dev:latest",
+  "health_ok": true,
+  "deployed_at": "2026-08-25T02:52:19.234643+00:00"
+}
