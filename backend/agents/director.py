@@ -50,7 +50,34 @@ async def build_bible(project: Project) -> FilmBible:
 
     # 3. Persist (append-only versioned)
     await versioning.commit_bible_version(project.id, bible)
+
+    # 4. Generate the shot list from the story beats (blueprint Day 7 prerequisite)
+    shots = await generate_shot_list(project, bible)
+
     return bible
+
+
+async def generate_shot_list(project: Project, bible: FilmBible) -> list[ShotSpec]:
+    """Generate a shot list (max 4) with explicit bible references per shot.
+
+    Called automatically after the bible is built, so the generation pipeline
+    (Day 7) has shots to generate.
+    """
+    # Build shots from story beats (max 4 — hackathon scope)
+    shots = []
+    for i, beat in enumerate(bible.story_beats[:4]):
+        shot = ShotSpec(
+            order=beat.order,
+            description=beat.description,
+            bible_version=bible.version,
+            character_ids=[c.id for c in bible.characters],
+            location_id=bible.locations[0].id if bible.locations else None,
+            modality_calls=["veo", "chirp", "lyria"],
+        )
+        await store.save_shot(shot, project.id)
+        shots.append(shot)
+    await store.log_event(project.id, "shot_list_generated", {"count": len(shots)})
+    return shots
 
 
 async def _synthesize_bible(logline: str, refs: list) -> FilmBible:

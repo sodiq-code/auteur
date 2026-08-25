@@ -41,26 +41,28 @@ class GenerateRequest(BaseModel):
 async def generate_shot(project_id: str, shot_id: str, req: GenerateRequest) -> dict[str, Any]:
     """Trigger generation for a shot (blueprint Table 38 row 6).
 
-    Returns a 202 + generationId. The full SSE streaming pipeline (Day 7) will
-    stream Veo/Chirp/Lyria/Imagen progress events; for now, returns accepted.
+    Runs the real generation pipeline: Veo 3.1 (video) + Chirp 3 (voice) +
+    Lyria 2 (music) concurrently, with the Film Bible injected as context.
+    Returns the per-modality results + output URIs.
     """
+    from ..pipelines import generate as generate_pipeline
+
     project = await store.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="project not found")
     shots = await store.get_shots(project_id)
-    if not any(s.id == shot_id for s in shots):
+    shot = next((s for s in shots if s.id == shot_id), None)
+    if not shot:
         raise HTTPException(status_code=404, detail="shot not found")
-    generation_id = uuid.uuid4().hex
-    await store.log_event(project_id, "generation_started", {
-        "shotId": shot_id, "generationId": generation_id,
-        "bible_version": req.bible_version,
-    })
-    return {
-        "generation_id": generation_id,
-        "shot_id": shot_id,
-        "status": "accepted",
-        "note": "SSE streaming pipeline comes in the generation-pipeline task",
-    }
+
+    # Get the bible at the requested version (or latest)
+    bible = await store.get_bible(project_id, version=req.bible_version) or await store.get_bible(project_id)
+    if not bible:
+        raise HTTPException(status_code=404, detail="no bible found — call POST /build-bible first")
+
+    # Run the generation pipeline (this takes ~60-90s for Veo)
+    result = await generate_pipeline.generate_shot(project_id, shot, bible)
+    return result
 
 
 class RegenerateRequest(BaseModel):
