@@ -14,10 +14,8 @@ import type {
   ShotSpec,
 } from "./types";
 
-// In production (unified Cloud Run): empty base = relative URLs (Next.js rewrites /api/* to FastAPI)
-// In dev: use the deployed Cloud Run backend URL directly
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "";
+// The frontend calls the dedicated backend service (handles long-running calls like build-bible)
+const API_BASE = "https://auteur-dev-jbkbgthudq-uc.a.run.app";
 
 async function apiFetch<T>(
   path: string,

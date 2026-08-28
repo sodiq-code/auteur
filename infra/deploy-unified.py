@@ -73,7 +73,7 @@ def main():
     build_body = {
         "source": {"storageSource": {"bucket": BUCKET, "object": obj_name}},
         "steps": [
-            {"name": "gcr.io/cloud-builders/docker", "args": ["build", "-t", IMAGE, "-f", "Dockerfile", "."]},
+            {"name": "gcr.io/cloud-builders/docker", "args": ["build", "--no-cache", "-t", IMAGE, "-f", "Dockerfile", "."]},
             {"name": "gcr.io/cloud-builders/docker", "args": ["push", IMAGE]},
         ],
         "images": [IMAGE],

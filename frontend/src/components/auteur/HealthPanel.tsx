@@ -140,7 +140,7 @@ export function HealthPanel({ open, onClose }: { open: boolean; onClose: () => v
             </div>
 
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3 text-[10px] text-zinc-500">
-              <div className="font-mono text-teal-400/70">Cloud Run (unified)</div>
+              <div className="font-mono text-teal-400/70">auteur-dev backend</div>
               <div className="mt-1">Cloud Run · us-central1 · 14 endpoints live</div>
             </div>
           </div>
