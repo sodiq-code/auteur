@@ -151,7 +151,7 @@ export default function Page() {
               <Github className="h-4 w-4" />
             </Link>
             <Link
-              href="https://auteur-dev-jbkbgthudq-uc.a.run.app/docs"
+              href="/api/docs"
               target="_blank"
               className="hidden h-8 items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-2.5 text-xs font-medium text-zinc-400 transition hover:text-zinc-200 sm:flex"
             >

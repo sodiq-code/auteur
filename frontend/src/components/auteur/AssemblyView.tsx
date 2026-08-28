@@ -15,7 +15,7 @@ import { assembleFilm, createShareLink, exportBible } from "@/lib/api";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "https://auteur-dev-jbkbgthudq-uc.a.run.app";
+  "";
 
 export function AssemblyView() {
   const { project, bible, setView, setShareSlug } = useStudio();
