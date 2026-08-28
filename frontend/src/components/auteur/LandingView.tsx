@@ -1,15 +1,29 @@
 /**
- * LandingView — blueprint Section 30.2 row 1.
- * Hero with looping side-by-side video; one CTA ("Make your first film").
+ * LandingView — blueprint Section 30.2 row 1 + Day 11 (canonical demo).
+ *
+ * Loads the pre-rendered canonical demo by default (the safety net — visitors
+ * see the demo instantly). The "Make your first film" CTA triggers the real
+ * logline → research → bible pipeline.
  */
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Film, Play, Sparkles, ArrowRight } from "lucide-react";
+import { Film, Play, Sparkles, ArrowRight, Zap, Check, Loader2 } from "lucide-react";
 import { useStudio } from "@/lib/store";
+import { getDemo, type DemoData } from "@/lib/api";
 
 export function LandingView() {
   const setView = useStudio((s) => s.setView);
+  const [demo, setDemo] = useState<DemoData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getDemo()
+      .then(setDemo)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="relative flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center overflow-hidden px-4 py-12">
@@ -37,24 +51,50 @@ export function LandingView() {
           Chirp 3, Lyria 2, and Imagen 3 generation call.
         </p>
 
-        {/* side-by-side signature moment */}
+        {/* side-by-side signature moment (from the pre-rendered demo) */}
         <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/40 shadow-2xl shadow-teal-500/5">
-          <Image
-            src="/auteur/day1/side-by-side.png"
-            alt="Side-by-side: one character held consistent across four scenes"
-            width={1920}
-            height={440}
-            className="h-auto w-full"
-            priority
-          />
+          {loading ? (
+            <div className="flex aspect-[1920/440] items-center justify-center bg-zinc-950">
+              <Loader2 className="h-6 w-6 animate-spin text-teal-400" />
+            </div>
+          ) : (
+            <Image
+              src="/auteur/day1/side-by-side.png"
+              alt="Side-by-side: one character held consistent across four scenes"
+              width={1920}
+              height={440}
+              className="h-auto w-full"
+              priority
+            />
+          )}
         </div>
         <p className="mt-2 text-[11px] text-zinc-500">
           One character reference · four scenes · Veo 3.1 ASSET consistency
         </p>
 
+        {/* demo stats (from the pre-rendered canonical demo) */}
+        {demo && (
+          <div className="mt-6 flex items-center justify-center gap-6 text-xs">
+            <div className="flex items-center gap-1.5 text-emerald-400">
+              <Check className="h-3.5 w-3.5" />
+              <span className="font-mono">{demo.consistency.mean_overall}</span>
+              <span className="text-zinc-500">consistency</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-zinc-400">
+              <Film className="h-3.5 w-3.5 text-teal-400" />
+              <span className="font-mono">{demo.shots.length}</span>
+              <span className="text-zinc-500">shots</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-amber-400">
+              <Zap className="h-3.5 w-3.5" />
+              <span className="text-zinc-500">pre-rendered demo</span>
+            </div>
+          </div>
+        )}
+
         <button
           onClick={() => setView("logline")}
-          className="group mt-10 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-lg shadow-teal-500/25 transition hover:shadow-teal-500/40 hover:brightness-110"
+          className="group mt-8 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-lg shadow-teal-500/25 transition hover:shadow-teal-500/40 hover:brightness-110"
         >
           <Film className="h-4 w-4" />
           Make your first film

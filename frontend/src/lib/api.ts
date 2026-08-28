@@ -63,6 +63,31 @@ export async function getHealth(): Promise<HealthStatus> {
 }
 
 // --------------------------------------------------------------------------- //
+// Canonical demo (blueprint Day 11 — pre-rendered safety net)
+// --------------------------------------------------------------------------- //
+
+export interface DemoData {
+  status: string;
+  logline: string;
+  bible: Record<string, unknown>;
+  shots: Array<{ id: string; order: number; label: string; scene: string; frame: string; score: number }>;
+  consistency: {
+    mean_overall: number;
+    threshold: number;
+    verdict: string;
+    model: string;
+    independent_vlm: number;
+  };
+  side_by_side: string;
+  character_reference: string;
+  note: string;
+}
+
+export async function getDemo(): Promise<DemoData> {
+  return apiFetch<DemoData>("/api/demo");
+}
+
+// --------------------------------------------------------------------------- //
 // Director Agent (Table 38 — runtime endpoints)
 // --------------------------------------------------------------------------- //
 
