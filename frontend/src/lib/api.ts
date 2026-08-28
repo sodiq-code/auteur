@@ -230,3 +230,19 @@ export async function exportShotsCsv(projectId: string): Promise<string> {
 export async function getEvents(projectId: string): Promise<{ project_id: string; events: unknown[]; count: number }> {
   return apiFetch(`/api/projects/${projectId}/events`);
 }
+
+// --------------------------------------------------------------------------- //
+// Public share view (Table 38 — GET /api/share/{slug})
+// --------------------------------------------------------------------------- //
+
+export interface SharedProject {
+  project: Project;
+  bible: FilmBible | null;
+  shots: ShotSpec[];
+  film_url: string | null;
+  share_slug: string;
+}
+
+export async function getSharedProject(slug: string): Promise<SharedProject> {
+  return apiFetch<SharedProject>(`/api/share/${slug}`);
+}

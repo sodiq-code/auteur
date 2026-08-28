@@ -40,11 +40,17 @@ async def assemble(project_id: str) -> dict[str, Any]:
 
 @router.post("/share")
 async def create_share_link(project_id: str) -> dict[str, Any]:
-    """Create a public share link (blueprint Table 38 row 10)."""
-    import secrets
-    slug = secrets.token_urlsafe(6)  # 8-char random slug (blueprint Table 39 row 7)
-    await store.log_event(project_id, "share_link_created", {"slug": slug})
-    return {"public_slug": slug, "share_url": f"/share/{slug}"}
+    """Create a public share link (blueprint Table 38 row 10).
+
+    Generates an 8-char random slug (~2^48 entropy, blueprint Table 39 row 7),
+    persists the slug → project_id mapping, returns the share URL.
+    """
+    project = await store.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="project not found")
+    slug = await store.create_share_link(project_id)
+    await store.update_project_status(project_id, status="shared")
+    return {"public_slug": slug, "share_url": f"/api/share/{slug}"}
 
 
 @router.get("/export/bible")

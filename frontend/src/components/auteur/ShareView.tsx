@@ -5,15 +5,27 @@
 "use client";
 
 import Image from "next/image";
-import { Share2, Copy, Check, Eye, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { Share2, Copy, Check, Eye, ArrowLeft, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useStudio } from "@/lib/store";
+import { getSharedProject, type SharedProject } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 
 export function ShareView() {
   const { shareSlug, bible, project, setView, reset } = useStudio();
   const [copied, setCopied] = useState(false);
-  const shareUrl = shareSlug ? `${typeof window !== "undefined" ? window.location.origin : ""}/share/${shareSlug}` : "";
+  const [sharedProject, setSharedProject] = useState<SharedProject | null>(null);
+
+  const API_BASE =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    "https://auteur-dev-jbkbgthudq-uc.a.run.app";
+  const shareUrl = shareSlug ? `${API_BASE}/api/share/${shareSlug}` : "";
+
+  // verify the share link works by fetching the shared project
+  useEffect(() => {
+    if (!shareSlug) return;
+    getSharedProject(shareSlug).then(setSharedProject).catch(() => {});
+  }, [shareSlug]);
 
   function handleCopy() {
     if (shareUrl) {
@@ -38,15 +50,34 @@ export function ShareView() {
 
       {/* share URL */}
       {shareUrl && (
-        <div className="mb-6 flex items-center gap-2 rounded-lg border border-teal-500/30 bg-teal-500/5 px-4 py-3">
-          <code className="flex-1 truncate font-mono text-xs text-teal-200">{shareUrl}</code>
-          <button
-            onClick={handleCopy}
-            className="inline-flex items-center gap-1 rounded-md bg-teal-500 px-2.5 py-1 text-xs font-semibold text-zinc-950 transition hover:bg-teal-400"
-          >
-            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-            {copied ? "Copied" : "Copy"}
-          </button>
+        <div className="mb-6 rounded-lg border border-teal-500/30 bg-teal-500/5 px-4 py-3">
+          <div className="mb-2 flex items-center gap-2">
+            <code className="flex-1 truncate font-mono text-xs text-teal-200">{shareUrl}</code>
+            <button
+              onClick={handleCopy}
+              className="inline-flex items-center gap-1 rounded-md bg-teal-500 px-2.5 py-1 text-xs font-semibold text-zinc-950 transition hover:bg-teal-400"
+            >
+              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              {copied ? "Copied" : "Copy"}
+            </button>
+            <a
+              href={shareUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-medium text-zinc-300 transition hover:border-zinc-600"
+            >
+              <ExternalLink className="h-3 w-3" /> Open
+            </a>
+          </div>
+          {sharedProject ? (
+            <div className="flex items-center gap-1.5 text-[10px] text-emerald-300">
+              <Check className="h-3 w-3" />
+              share link verified — returns project + bible + {sharedProject.shots.length} shots
+              {sharedProject.film_url ? " + film" : ""}
+            </div>
+          ) : shareSlug ? (
+            <div className="text-[10px] text-zinc-500">verifying share link...</div>
+          ) : null}
         </div>
       )}
 

@@ -183,6 +183,7 @@ async def get_shots(project_id: str) -> list[ShotSpec]:
 # --------------------------------------------------------------------------- #
 
 _GENERATIONS: dict[str, dict[str, Any]] = {}  # key = {projectId}_{shotId}_{modality}
+_SHARE_LINKS: dict[str, str] = {}  # slug -> project_id
 
 
 def _gen_key(project_id: str, shot_id: str, modality: str) -> str:
@@ -218,6 +219,24 @@ async def get_all_generations(project_id: str) -> list[dict[str, Any]]:
         for k, v in _GENERATIONS.items()
         if k.startswith(f"{project_id}_")
     ]
+
+
+# --------------------------------------------------------------------------- #
+# Share links (slug → project_id, blueprint Table 33 + Table 39 row 7)
+# --------------------------------------------------------------------------- #
+
+async def create_share_link(project_id: str) -> str:
+    """Create a public share slug for a project. Returns the slug."""
+    import secrets
+    slug = secrets.token_urlsafe(6)  # 8-char random slug (~2^48 entropy, blueprint Table 39 row 7)
+    _SHARE_LINKS[slug] = project_id
+    await log_event(project_id, "share_link_created", {"slug": slug})
+    return slug
+
+
+async def get_project_by_slug(slug: str) -> str | None:
+    """Look up a project_id by its share slug (for the public share view)."""
+    return _SHARE_LINKS.get(slug)
 
 
 # --------------------------------------------------------------------------- #
