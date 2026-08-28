@@ -1,6 +1,6 @@
 /**
- * ShotGridView — blueprint Section 30.2 row 7.
- * 2x2 grid of 4 shots; click any for detail; drift score per shot.
+ * ShotGridView — blueprint Section 30.2 row 7 + Day 12 (UX polish).
+ * 2x2 grid of 4 shots + the SideBySide signature moment; click any for detail.
  */
 "use client";
 
@@ -8,6 +8,8 @@ import Image from "next/image";
 import { Grid3x3, ChevronRight, Check } from "lucide-react";
 import { useStudio } from "@/lib/store";
 import { Badge } from "@/components/ui/badge";
+import { SideBySide } from "@/components/auteur/SideBySide";
+import { EmptyState } from "@/components/auteur/StateComponents";
 
 const SHOT_DATA = [
   { id: 1, label: "Lamp Room", scene: "Interior, dusk · polishing the lens", score: 0.95, frame: "/auteur/day1/shot-1.png", notes: "Re-framed to three-quarter profile after stricter model flagged obscured face." },
@@ -22,10 +24,15 @@ interface ShotGridProps {
 
 export function ShotGridView({ onShotClick }: ShotGridProps = {}) {
   const setView = useStudio((s) => s.setView);
+  const bible = useStudio((s) => s.bible);
+
+  if (!bible && !SHOT_DATA.length) {
+    return <EmptyState title="No shots generated yet" description="Build a Bible first, then generate shots." ctaLabel="Start" onCta={() => setView("logline")} />;
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-6">
+      <div className="auteur-rise mb-6">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-400">
           <Grid3x3 className="h-3.5 w-3.5 text-teal-400" />
           Step 6 — Shot Grid
@@ -37,6 +44,16 @@ export function ShotGridView({ onShotClick }: ShotGridProps = {}) {
         </p>
       </div>
 
+      {/* SideBySide signature moment */}
+      <div className="auteur-rise mb-6" style={{ animationDelay: "0.1s" }}>
+        <SideBySide
+          shots={SHOT_DATA.map((s) => ({ id: s.id, label: s.label, scene: s.scene.split(" · ")[0], frame: s.frame, score: s.score }))}
+          meanOverall={0.925}
+          verdict="GO"
+        />
+      </div>
+
+      {/* individual shot cards */}
       <div className="grid grid-cols-2 gap-3">
         {SHOT_DATA.map((s) => (
           <button
@@ -72,7 +89,7 @@ export function ShotGridView({ onShotClick }: ShotGridProps = {}) {
         ))}
       </div>
 
-      <div className="mt-6 flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3">
+      <div className="auteur-rise mt-6 flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3" style={{ animationDelay: "0.2s" }}>
         <span className="text-xs text-zinc-400">
           Mean consistency: <span className="font-mono text-emerald-400">0.925</span> · drift threshold 0.25
         </span>

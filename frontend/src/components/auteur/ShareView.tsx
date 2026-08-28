@@ -1,14 +1,15 @@
 /**
- * ShareView — blueprint Section 30.2 row 11.
- * Side-by-side demo loop + user's film + bible summary.
+ * ShareView — blueprint Section 30.2 row 11 + Day 12 (UX polish).
+ * Side-by-side signature moment + the user's film + bible summary.
  */
 "use client";
 
 import Image from "next/image";
-import { Share2, Copy, Check, Eye, ArrowLeft, ExternalLink } from "lucide-react";
+import { Share2, Copy, Check, Eye, ArrowLeft, ExternalLink, Film, BookOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useStudio } from "@/lib/store";
 import { getSharedProject, type SharedProject } from "@/lib/api";
+import { SideBySide } from "@/components/auteur/SideBySide";
 import { Badge } from "@/components/ui/badge";
 
 export function ShareView() {
@@ -21,7 +22,6 @@ export function ShareView() {
     "https://auteur-dev-jbkbgthudq-uc.a.run.app";
   const shareUrl = shareSlug ? `${API_BASE}/api/share/${shareSlug}` : "";
 
-  // verify the share link works by fetching the shared project
   useEffect(() => {
     if (!shareSlug) return;
     getSharedProject(shareSlug).then(setSharedProject).catch(() => {});
@@ -38,19 +38,21 @@ export function ShareView() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-6">
-        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-400">
+        <div className="auteur-rise mb-2 inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-400">
           <Share2 className="h-3.5 w-3.5 text-teal-400" />
           Step 9 — Share
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Public share link</h2>
-        <p className="mt-1.5 text-sm text-zinc-400">
+        <h2 className="auteur-rise text-2xl font-bold tracking-tight text-zinc-100" style={{ animationDelay: "0.1s" }}>
+          Public share link
+        </h2>
+        <p className="auteur-rise mt-1.5 text-sm text-zinc-400" style={{ animationDelay: "0.15s" }}>
           Anyone with this link can view your film + its Film Bible.
         </p>
       </div>
 
       {/* share URL */}
       {shareUrl && (
-        <div className="mb-6 rounded-lg border border-teal-500/30 bg-teal-500/5 px-4 py-3">
+        <div className="auteur-rise mb-6 rounded-lg border border-teal-500/30 bg-teal-500/5 px-4 py-3" style={{ animationDelay: "0.2s" }}>
           <div className="mb-2 flex items-center gap-2">
             <code className="flex-1 truncate font-mono text-xs text-teal-200">{shareUrl}</code>
             <button
@@ -81,30 +83,30 @@ export function ShareView() {
         </div>
       )}
 
-      {/* the signature side-by-side */}
-      <div className="mb-6">
+      {/* the signature SideBySide moment (blueprint Section 30.5) */}
+      <div className="auteur-rise mb-6" style={{ animationDelay: "0.25s" }}>
         <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
           <Eye className="h-3.5 w-3.5 text-amber-400" />
           The signature moment
         </div>
-        <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
-          <Image
-            src="/auteur/day1/side-by-side.png"
-            alt="Side-by-side: one character across four scenes"
-            width={1920}
-            height={440}
-            className="h-auto w-full"
-          />
-        </div>
-        <p className="mt-2 text-[11px] text-zinc-500">
-          The same character — Ewan — held consistent across four different scenes via
-          the Veo 3.1 ASSET reference.
-        </p>
+        <SideBySide
+          shots={[
+            { id: 1, label: "Lamp Room", scene: "Interior, dusk", frame: "/auteur/day1/shot-1.png", score: 0.95 },
+            { id: 2, label: "Rocks", scene: "Coastal, dawn", frame: "/auteur/day1/shot-2.png", score: 0.85 },
+            { id: 3, label: "Interior", scene: "Candlelight", frame: "/auteur/day1/shot-3.png", score: 0.95 },
+            { id: 4, label: "Exterior", scene: "Balcony, dusk", frame: "/auteur/day1/shot-4.png", score: 0.95 },
+          ]}
+          meanOverall={0.925}
+          verdict="GO"
+        />
       </div>
 
       {/* the film */}
-      <div className="mb-6">
-        <div className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">Your film</div>
+      <div className="auteur-rise mb-6" style={{ animationDelay: "0.3s" }}>
+        <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+          <Film className="h-3.5 w-3.5 text-teal-400" />
+          Your film
+        </div>
         <div className="grid grid-cols-2 gap-1 overflow-hidden rounded-xl border border-zinc-800">
           {["/auteur/day1/shot-1.png", "/auteur/day1/shot-2.png", "/auteur/day1/shot-3.png", "/auteur/day1/shot-4.png"].map((src, i) => (
             <div key={i} className="relative aspect-video overflow-hidden">
@@ -119,9 +121,12 @@ export function ShareView() {
 
       {/* bible summary */}
       {bible && project && (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
+        <div className="auteur-rise rounded-lg border border-zinc-800 bg-zinc-900/40 p-4" style={{ animationDelay: "0.35s" }}>
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-xs font-medium uppercase tracking-wide text-zinc-500">Film Bible summary</h3>
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-teal-400" />
+              <h3 className="text-xs font-medium uppercase tracking-wide text-zinc-500">Film Bible summary</h3>
+            </div>
             <Badge className="border-0 bg-teal-500/15 text-teal-300">v{bible.version}</Badge>
           </div>
           <p className="mb-3 text-sm text-zinc-300">{project.logline}</p>
