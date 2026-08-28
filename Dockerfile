@@ -1,32 +1,7 @@
-# Auteur — unified app Dockerfile (Next.js frontend + FastAPI backend on one Cloud Run service)
-# Serves the full application: the studio UI at / + the API at /api/*
+# Auteur — unified app Dockerfile (pre-built Next.js + FastAPI on one Cloud Run service)
+# The Next.js standalone build is pre-built locally and included in the tarball
+# so Docker doesn't need to run npm install/build (avoids Cloud Build cache issues)
 
-FROM node:20-slim AS frontend-builder
-
-WORKDIR /app
-
-# Set the correct API base URL for the production build (overrides any .env file)
-ENV NEXT_PUBLIC_API_BASE_URL=https://auteur-dev-jbkbgthudq-uc.a.run.app
-
-# Copy package files + install deps (use npm, not bun — more reliable in Cloud Build)
-COPY package.json bun.lock ./
-RUN npm install --legacy-peer-deps
-
-# Copy the Next.js app source
-COPY . .
-
-# Remove .env so it doesn't override the Docker ENV (which has the correct API_BASE_URL)
-RUN rm -f .env
-
-# Debug: verify the source has the correct API_BASE
-RUN grep "API_BASE" src/lib/api.ts || echo "API_BASE not found in api.ts"
-
-# Build the production standalone bundle
-RUN npm run build
-
-# ------------------------------------------------------------------- #
-# Final stage: Python + Node runtime
-# ------------------------------------------------------------------- #
 FROM python:3.12-slim
 
 # System deps: Node.js + ffmpeg + curl
@@ -46,14 +21,17 @@ RUN pip install --no-cache-dir fastapi uvicorn[standard] pydantic httpx \
     google-genai google-cloud-aiplatform google-auth google-cloud-storage \
     google-cloud-firestore Pillow python-dotenv sse-starlette requests
 
-# Copy the Next.js standalone build from the builder stage
-COPY --from=frontend-builder /app/.next/standalone ./next-standalone/
-COPY --from=frontend-builder /app/.next/static ./next-standalone/.next/static/
-COPY --from=frontend-builder /app/public ./next-standalone/public/
+# Copy the PRE-BUILT Next.js standalone output (built locally, not in Docker)
+COPY .next/standalone ./next-standalone/
+COPY .next/static ./next-standalone/.next/static/
+COPY public ./next-standalone/public/
 
 # Copy the startup script
 COPY deploy-start.sh ./
 RUN chmod +x deploy-start.sh
+
+# Verify the URL is baked into the build
+RUN grep -rq "auteur-dev-jbkbgthudq" /app/next-standalone/ && echo "✓ API_BASE URL verified in build" || echo "⚠ API_BASE URL not found"
 
 # Cloud Run sets PORT env (used by Next.js); FastAPI runs on 8000 internally
 ENV PORT=3000

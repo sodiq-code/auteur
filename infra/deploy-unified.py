@@ -34,7 +34,7 @@ def _H():
 
 def main():
     SERVICE = "auteur-app"
-    IMAGE = f"{REGION}-docker.pkg.dev/{PROJECT_ID}/{REPO}/auteur-app:latest"
+    IMAGE = f"{REGION}-docker.pkg.dev/{PROJECT_ID}/{REPO}/auteur-app:v{int(time.time())}"
 
     print(f"Deploying {SERVICE} to Cloud Run ({REGION})...")
     H = _H()
@@ -44,10 +44,9 @@ def main():
     print("[1/3] uploading source...")
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:
-        # include the Next.js app source
-        for item in ["src", "public", "package.json", "bun.lock", "next.config.ts",
-                          "tsconfig.json", "tailwind.config.ts", "postcss.config.mjs", "components.json",
-                          "Dockerfile", "deploy-start.sh", ".env"]:
+        # include the PRE-BUILT Next.js standalone + static + public + backend + Dockerfile
+        for item in [".next/standalone", ".next/static", "public", "package.json",
+                          "Dockerfile", "deploy-start.sh"]:
             p = source_dir / item
             if p.exists():
                 tar.add(str(p), arcname=item)
@@ -73,7 +72,7 @@ def main():
     build_body = {
         "source": {"storageSource": {"bucket": BUCKET, "object": obj_name}},
         "steps": [
-            {"name": "gcr.io/cloud-builders/docker", "args": ["build", "--no-cache", "-t", IMAGE, "-f", "Dockerfile", "."]},
+            {"name": "gcr.io/cloud-builders/docker", "args": ["build", "--no-cache", "--build-arg", f"CACHEBUST={int(time.time())}", "-t", IMAGE, "-f", "Dockerfile", "."]},
             {"name": "gcr.io/cloud-builders/docker", "args": ["push", IMAGE]},
         ],
         "images": [IMAGE],

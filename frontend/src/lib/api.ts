@@ -14,7 +14,9 @@ import type {
   ShotSpec,
 } from "./types";
 
-// The frontend calls the dedicated backend service (handles long-running calls like build-bible)
+// The frontend calls the dedicated backend service directly (NOT through the Next.js proxy)
+// This avoids the proxy timeout issue on long-running calls like build-bible (~30s)
+// Hardcoded — no env var dependency
 const API_BASE = "https://auteur-dev-jbkbgthudq-uc.a.run.app";
 
 async function apiFetch<T>(
