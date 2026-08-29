@@ -1,18 +1,17 @@
 /**
  * RenderQueueView — blueprint Section 30.2 row 6.
- * Live status of Veo/Chirp/Lyria/Imagen calls; thumbnails as they complete; drift scores.
+ * Live status of Veo/Chirp/Lyria calls per shot.
  *
- * Calls POST /api/projects/{id}/shots/{shotId}/generate for each shot, running
- * the real generation pipeline on the deployed backend.
+ * Fetches real shots from GET /api/projects/{id}/shots, then calls
+ * POST /api/projects/{id}/shots/{shotId}/generate for each shot sequentially.
  */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Check, Film, Mic, Music, ChevronRight, AlertCircle } from "lucide-react";
 import { useStudio } from "@/lib/store";
-import { generateShot } from "@/lib/api";
-import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
+import { getShots, generateShot, type ShotSpec } from "@/lib/api";
+import { EmptyState, ErrorState, Spinner } from "@/components/auteur/StateComponents";
 
 const MODALITY_META = {
   veo: { label: "Veo 3.1", icon: Film, color: "text-teal-400" },
@@ -27,34 +26,49 @@ interface ShotGenState {
   modalities: Record<string, { status: string; size_bytes?: number; elapsed_sec?: number; error?: string }>;
   totalElapsed?: number;
   done: boolean;
+  error?: string;
 }
 
 export function RenderQueueView() {
-  const { shots, bible, project, setView } = useStudio();
+  const { project, bible, setView, setShots } = useStudio();
+  const [realShots, setRealShots] = useState<ShotSpec[]>([]);
   const [genStates, setGenStates] = useState<Record<string, ShotGenState>>({});
   const [generating, setGenerating] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const startedRef = useRef(false);
 
-  // If no shots, build them from the bible
-  const effectiveShots = shots.length > 0 ? shots : (bible ? bible.story_beats.slice(0, 4).map((beat, i) => ({
-    id: `shot-${i + 1}`,
-    order: beat.order,
-    description: beat.description,
-    bible_version: bible.version,
-    character_ids: [],
-    location_id: null,
-    modality_calls: ["veo", "chirp", "lyria"] as const,
-    status: "pending" as const,
-  })) : []);
-
+  // 1. Fetch real shots from the backend on mount
   useEffect(() => {
-    if (startedRef.current || effectiveShots.length === 0 || !project) return;
+    if (!project) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    getShots(project.id)
+      .then((data) => {
+        setRealShots(data.shots);
+        setShots(data.shots);
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(e instanceof Error ? e.message : "Failed to fetch shots");
+        setLoading(false);
+      });
+  }, [project, setShots]);
+
+  // 2. Generate each shot sequentially (after fetching real shot IDs)
+  useEffect(() => {
+    if (startedRef.current || realShots.length === 0 || !project) return;
+    // Only auto-generate if no shots have been generated yet
+    const alreadyGenerated = realShots.some((s) => s.status === "generated" || s.status === "approved");
+    if (alreadyGenerated) return;
+
     startedRef.current = true;
     setGenerating(true);
 
-    // Generate each shot sequentially (concurrent Veo calls would hit quota)
     (async () => {
-      for (const shot of effectiveShots) {
+      for (const shot of realShots) {
         setGenStates((prev) => ({
           ...prev,
           [shot.id]: {
@@ -85,26 +99,39 @@ export function RenderQueueView() {
               ...prev[shot.id],
               modalities: { error: { status: "failed", error: e instanceof Error ? e.message : "generation failed" } },
               done: true,
+              error: e instanceof Error ? e.message : "generation failed",
             },
           }));
         }
       }
       setGenerating(false);
     })();
-  }, [effectiveShots, project, bible]);
+  }, [realShots, project, bible, setView]);
 
   const totalDone = Object.values(genStates).filter((s) => s.done).length;
-  const allDone = totalDone === effectiveShots.length && totalDone > 0;
+  const allDone = totalDone === realShots.length && totalDone > 0;
 
-  if (effectiveShots.length === 0) {
-    return <div className="p-8 text-sm text-zinc-500">Build a Bible first.</div>;
+  if (!project) {
+    return <EmptyState title="No project" description="Create a project first." ctaLabel="Start" onCta={() => setView("logline")} />;
+  }
+
+  if (loading) {
+    return <Spinner label="Fetching shots from backend..." />;
+  }
+
+  if (error) {
+    return <ErrorState title="Failed to load shots" message={error} onRetry={() => window.location.reload()} />;
+  }
+
+  if (realShots.length === 0) {
+    return <EmptyState title="No shots" description="Build a Bible first to generate the shot list." ctaLabel="Build Bible" onCta={() => setView("logline")} />;
   }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-6">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-400">
-          {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-400" /> : <Check className="h-3.5 w-3.5 text-emerald-400" />}
+          {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-400" /> : allDone ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Film className="h-3.5 w-3.5 text-teal-400" />}
           Step 5 — Render Queue
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Rendering your film</h2>
@@ -115,7 +142,7 @@ export function RenderQueueView() {
       </div>
 
       <div className="space-y-4">
-        {effectiveShots.map((shot) => {
+        {realShots.map((shot) => {
           const gs = genStates[shot.id];
           const shotDone = gs?.done;
           const shotMods = gs?.modalities || {};
@@ -136,9 +163,9 @@ export function RenderQueueView() {
                   <span className="text-xs text-zinc-200">{shot.description}</span>
                 </div>
                 {shotOk ? (
-                  <Badge className="border-0 bg-emerald-500/15 text-emerald-300">done</Badge>
+                  <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-300">done</span>
                 ) : shotFailed ? (
-                  <Badge className="border-0 bg-amber-500/15 text-amber-300">partial</Badge>
+                  <span className="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-300">partial</span>
                 ) : (
                   <Loader2 className="h-4 w-4 animate-spin text-teal-400" />
                 )}
@@ -190,6 +217,9 @@ export function RenderQueueView() {
                   {shotFailed && " · some modalities failed (check logs)"}
                 </div>
               )}
+              {shotFailed && gs?.error && (
+                <div className="mt-1 text-[10px] text-rose-400/70">error: {gs.error.slice(0, 100)}</div>
+              )}
             </div>
           );
         })}
@@ -197,7 +227,7 @@ export function RenderQueueView() {
 
       <div className="mt-6 flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3">
         <span className="text-xs text-zinc-400">
-          {generating ? `generating... ${totalDone}/${effectiveShots.length} shots done` : `${totalDone}/${effectiveShots.length} shots complete`}
+          {generating ? `generating... ${totalDone}/${realShots.length} shots done` : allDone ? `${totalDone}/${realShots.length} shots complete` : `${totalDone}/${realShots.length} shots done`}
         </span>
         <button
           onClick={() => setView("grid")}

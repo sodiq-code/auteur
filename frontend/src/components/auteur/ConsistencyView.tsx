@@ -9,17 +9,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Gauge, ChevronRight, Check, RotateCcw, Loader2, AlertCircle, Play } from "lucide-react";
+import { Gauge, ChevronRight, Check, RotateCcw, Loader2, AlertCircle, Play, Film } from "lucide-react";
 import { useStudio } from "@/lib/store";
-import { checkAllShots, type ConsistencyAllResponse, type ConsistencyShotReport } from "@/lib/api";
+import { checkAllShots, getShots, type ConsistencyAllResponse, type ConsistencyShotReport } from "@/lib/api";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState, Spinner } from "@/components/auteur/StateComponents";
 
 export function ConsistencyView() {
   const { project, bible, setView } = useStudio();
   const [result, setResult] = useState<ConsistencyAllResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shotsReady, setShotsReady] = useState(false);
+  const [checkingShots, setCheckingShots] = useState(true);
+
+  // 1. First check if shots have been generated (status != "pending")
+  useEffect(() => {
+    if (!project) {
+      setCheckingShots(false);
+      return;
+    }
+    getShots(project.id)
+      .then((data) => {
+        const generated = data.shots.some((s) => s.status === "generated" || s.status === "approved");
+        setShotsReady(generated);
+        setCheckingShots(false);
+      })
+      .catch(() => setCheckingShots(false));
+  }, [project]);
 
   async function handleCheck() {
     if (!project) return;
@@ -35,16 +53,50 @@ export function ConsistencyView() {
     }
   }
 
-  // auto-run if we have shots (from the store)
+  // 2. Only auto-run if shots have been generated
   useEffect(() => {
-    if (project && !result && !loading) {
+    if (project && shotsReady && !result && !loading) {
       handleCheck();
     }
-  }, [project]);
+  }, [project, shotsReady]);
 
   const meanOverall = result?.mean_overall ?? 0;
   const threshold = result?.threshold ?? 0.25;
   const verdict = result?.verdict ?? "—";
+
+  // Show empty state if shots haven't been generated yet
+  if (!checkingShots && !shotsReady) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <div className="mb-6">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-400">
+            <Gauge className="h-3.5 w-3.5 text-teal-400" />
+            Step 7 — Consistency Check
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Drift dashboard</h2>
+          <p className="mt-1.5 text-sm text-zinc-400">
+            The Consistency Check Agent (Gemini 3.1 Pro vision) compares each shot
+            to the character reference. Drift = 1 − consistency; threshold 0.25.
+          </p>
+        </div>
+        <EmptyState
+          icon={Film}
+          title="No generated shots to check"
+          description="Generate your shots first (Step 5 — Render Queue). The Consistency Check Agent needs Veo clips to compare against the character reference."
+          ctaLabel="Go to Render Queue"
+          onCta={() => setView("render")}
+        />
+      </div>
+    );
+  }
+
+  if (checkingShots) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <Spinner label="Checking shot status..." />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
