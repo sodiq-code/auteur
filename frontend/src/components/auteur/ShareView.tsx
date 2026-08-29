@@ -44,7 +44,7 @@ export function ShareView() {
           Public share link
         </h2>
         <p className="auteur-rise mt-1.5 text-sm text-zinc-400" style={{ animationDelay: "0.15s" }}>
-          Anyone with this link can view your film + its Film Bible.
+          Anyone with this link can view the film and its Film Bible.
         </p>
       </div>
 
@@ -103,7 +103,7 @@ export function ShareView() {
       <div className="auteur-rise mb-6" style={{ animationDelay: "0.3s" }}>
         <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
           <Film className="h-3.5 w-3.5 text-teal-400" />
-          Your film
+          Final film
           {sharedProject?.film_url && (
             <Badge className="ml-2 border-0 bg-sky-500/15 text-sky-300">
               <Volume2 className="mr-1 h-3 w-3" /> with sound
@@ -159,7 +159,7 @@ export function ShareView() {
           className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:border-zinc-600"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Make another film
+          Start a new production
         </button>
       </div>
     </div>

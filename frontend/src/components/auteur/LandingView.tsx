@@ -43,7 +43,7 @@ export function LandingView() {
       <div className="relative z-10 mx-auto max-w-4xl text-center">
         <div className="auteur-rise mb-6 inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-400 backdrop-blur">
           <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-          The Film Bible Agent · Agentic Cinema Hackathon
+          The Film Bible Agent · Cross-shot consistency for generative cinema
         </div>
 
         <h1 className="auteur-rise text-4xl font-bold leading-tight tracking-tight text-zinc-100 sm:text-6xl" style={{ animationDelay: "0.1s" }}>
@@ -88,7 +88,7 @@ export function LandingView() {
             </div>
             <div className="flex items-center gap-1.5 text-amber-400">
               <Zap className="h-3.5 w-3.5" />
-              <span className="text-zinc-500">pre-rendered</span>
+              <span className="text-zinc-500">sample production</span>
             </div>
           </div>
         )}
@@ -99,7 +99,7 @@ export function LandingView() {
           style={{ animationDelay: "0.5s" }}
         >
           <Film className="h-4 w-4" />
-          Make your first film
+          Start a new production
           <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
         </button>
 
@@ -117,7 +117,7 @@ export function LandingView() {
             { n: "01", t: "Logline", d: "One sentence", icon: Edit3 },
             { n: "02", t: "Research", d: "Parallel Search", icon: Search },
             { n: "03", t: "Bible", d: "Gemini 3.1 Pro", icon: BookOpen },
-            { n: "04", t: "Render", d: "Veo + Chirp + Lyria", icon: Clapperboard },
+            { n: "04", t: "Render", d: "Veo, Chirp, Lyria", icon: Clapperboard },
           ].map((s) => (
             <div
               key={s.n}

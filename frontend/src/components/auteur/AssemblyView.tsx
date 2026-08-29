@@ -99,7 +99,7 @@ export function AssemblyView() {
           Step 8 — Assembly
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-zinc-100">
-          {filmUrl ? "Your film is ready" : "Assemble your film"}
+          {filmUrl ? "Film assembled" : "Assemble the film"}
         </h2>
         <p className="mt-1.5 text-sm text-zinc-400">
           {filmUrl
@@ -138,7 +138,7 @@ export function AssemblyView() {
                   ) : (
                     <Play className="h-4 w-4" />
                   )}
-                  {assembling ? "Assembling..." : "Assemble film"}
+                  {assembling ? "Assembling" : "Assemble film"}
                 </button>
               </div>
             </div>

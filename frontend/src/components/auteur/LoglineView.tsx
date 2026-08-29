@@ -85,14 +85,14 @@ export function LoglineView() {
           Step 1 — Logline
         </div>
         <h2 className="auteur-rise text-3xl font-bold tracking-tight text-zinc-100 sm:text-4xl" style={{ animationDelay: "0.05s" }}>
-          What&apos;s your film{" "}
+          What is the film{" "}
           <span className="bg-gradient-to-r from-teal-400 to-amber-300 bg-clip-text text-transparent">
             about?
           </span>
         </h2>
         <p className="auteur-rise mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base" style={{ animationDelay: "0.1s" }}>
-          One sentence. The Director Agent will research it, build a Film Bible,
-          and generate a 4-shot short film with synchronized voiceover and score.
+          One sentence. The Director Agent researches it, builds a Film Bible,
+          and produces a 4-shot short film with synchronized voiceover and score.
         </p>
       </div>
 
@@ -113,7 +113,7 @@ export function LoglineView() {
           maxLength={HARD_LIMIT + 40}
         />
 
-        {/* char-limit progress bar */}
+        {/* char-limit progress bar + submit row (combined) */}
         <div className="mt-3">
           <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-800">
             <div
@@ -121,8 +121,8 @@ export function LoglineView() {
               style={{ width: `${charState.pct}%`, backgroundColor: charState.color }}
             />
           </div>
-          <div className="mt-2 flex items-center justify-between text-xs">
-            <span className="flex items-center gap-2 text-zinc-500">
+          <div className="mt-2.5 flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-xs text-zinc-500">
               <span className="font-mono text-zinc-400">{len}</span>
               <span>/</span>
               <span className="font-mono">{HARD_LIMIT}</span>
@@ -134,47 +134,44 @@ export function LoglineView() {
                 {charState.label}
               </span>
             </span>
-            <span className="flex items-center gap-1.5 text-zinc-600">
-              <span className="auteur-kbd">⌘</span>
-              <span className="auteur-kbd">↵</span>
-              <span className="text-zinc-500">to submit</span>
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="hidden items-center gap-1.5 text-zinc-600 sm:flex">
+                <span className="auteur-kbd">⌘</span>
+                <span className="auteur-kbd">↵</span>
+              </span>
+              <button
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+                className="group inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-500 px-5 py-2 text-sm font-semibold text-zinc-950 shadow-lg shadow-teal-500/25 transition hover:shadow-teal-500/40 hover:brightness-110 disabled:cursor-not-allowed disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-600 disabled:shadow-none"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {loading ? "Generating" : "Generate film"}
+                {!loading && (
+                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                )}
+              </button>
+            </div>
           </div>
-        </div>
-
-        {/* submit button */}
-        <div className="mt-5 flex justify-end">
-          <button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="group inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 shadow-lg shadow-teal-500/25 transition hover:shadow-teal-500/40 hover:brightness-110 disabled:cursor-not-allowed disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-600 disabled:shadow-none"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4" />
-            )}
-            {loading ? "Building…" : "Build my film"}
-            {!loading && (
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-            )}
-          </button>
         </div>
       </div>
 
       {/* example loglines */}
-      <div className="auteur-rise mt-12" style={{ animationDelay: "0.25s" }}>
+      <div className="auteur-rise mt-8" style={{ animationDelay: "0.25s" }}>
         <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
           <Lightbulb className="h-3.5 w-3.5 text-amber-400" />
           Example loglines
           <span className="text-zinc-700">— click to use</span>
         </div>
-        <div className="space-y-2">
+        <div className="grid gap-2 sm:grid-cols-2">
           {EXAMPLE_LOGLINES.map((ex, i) => (
             <button
               key={i}
               onClick={() => setLogline(ex.text)}
-              className="auteur-example-card group flex w-full items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-3 text-left"
+              className="auteur-example-card group flex w-full items-start gap-2.5 rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-left"
             >
               <ChevronRight className="auteur-example-arrow mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-400" />
               <div className="flex-1 min-w-0">

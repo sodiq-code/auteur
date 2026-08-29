@@ -136,9 +136,9 @@ export default function Page() {
                 window.dispatchEvent(e);
               }}
               className="hidden items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300 transition hover:bg-amber-500/20 md:flex"
-              title="Load canonical demo (press d)"
+              title="Load the sample production (press d)"
             >
-              <Zap className="h-3 w-3" /> demo
+              <Zap className="h-3 w-3" /> sample
             </button>
             {project && (
               <Badge variant="outline" className="hidden border-zinc-700 text-zinc-400 md:inline-flex">
@@ -256,16 +256,16 @@ export default function Page() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-3 text-[11px] text-zinc-600 sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
             <Film className="h-3 w-3 text-teal-400" />
-            <span>Auteur — the Film Bible Agent · Parallel Partner Track</span>
+            <span>Auteur · The Film Bible Agent</span>
           </div>
           <div className="flex items-center gap-3">
             {health && (
               <span className="font-mono text-zinc-700">
-                {Object.keys(health.model_status).length} models · backend v{health.version}
+                {Object.keys(health.model_status).length} models · {health.endpoints?.length ?? 0} endpoints
               </span>
             )}
             <Link href="https://agentic-cinema.devpost.com/" target="_blank" className="transition hover:text-zinc-400">
-              Agentic Cinema Hackathon
+              Agentic Cinema
             </Link>
           </div>
         </div>
@@ -275,7 +275,16 @@ export default function Page() {
       <HealthPanel open={healthPanelOpen} onClose={() => setHealthPanelOpen(false)} />
 
       {/* Keyboard shortcuts command palette (press ⌘K) */}
-      <KeyboardShortcutsHelp open={shortcutsHelpOpen} onClose={() => setShortcutsHelpOpen(false)} />
+      <KeyboardShortcutsHelp
+        open={shortcutsHelpOpen}
+        onClose={() => setShortcutsHelpOpen(false)}
+        onToggleHealth={() => setHealthPanelOpen((v) => !v)}
+        onLoadDemo={() => {
+          // trigger the demo load (same as pressing 'd')
+          const e = new KeyboardEvent("keydown", { key: "d" });
+          window.dispatchEvent(e);
+        }}
+      />
 
       {/* Shot detail dialog (click a shot in the grid) */}
       <ShotDetailDialog shot={detailShot} open={!!detailShot} onOpenChange={(v) => !v && setDetailShot(null)} />
