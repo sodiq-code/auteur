@@ -10,6 +10,15 @@ Lyria 2, and Imagen 3 generation call.
 Built for the **Agentic Cinema Hackathon** (Google Cloud × Devpost · Parallel Partner
 Track · submission deadline September 9, 2026).
 
+## Live URLs
+
+| What | URL |
+|------|-----|
+| **Studio UI (the app)** | https://auteur-app-jbkbgthudq-uc.a.run.app |
+| **API health** | https://auteur-dev-jbkbgthudq-uc.a.run.app/api/health |
+| **API docs (Swagger)** | https://auteur-dev-jbkbgthudq-uc.a.run.app/api/docs |
+| **Pre-rendered demo** | https://auteur-dev-jbkbgthudq-uc.a.run.app/api/demo |
+
 ---
 
 ## The insight
