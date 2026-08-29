@@ -48,6 +48,17 @@ _MEMORY = _MemoryStore()
 _FIRESTORE_CLIENT = None
 _USE_MEMORY = True  # flipped to False once Firestore client initializes
 
+# Initialize Firestore on module load (don't wait for the first store call)
+try:
+    from google.cloud import firestore as firestore_sync
+    _FIRESTORE_CLIENT = firestore_sync.Client(project=FIRESTORE_PROJECT, database=FIRESTORE_DATABASE)
+    _USE_MEMORY = False
+    print(f"[STORE] Firestore initialized at module load (db={FIRESTORE_DATABASE})", flush=True)
+except Exception as e:
+    _FIRESTORE_CLIENT = None
+    _USE_MEMORY = True
+    print(f"[STORE] Firestore init FAILED at module load, using in-memory: {str(e)[:200]}", flush=True)
+
 
 def _get_firestore():
     """Lazily init the Firestore async client; fall back to memory on failure."""
@@ -58,9 +69,10 @@ def _get_firestore():
         from google.cloud import firestore_async
         _FIRESTORE_CLIENT = firestore_async.Client(project=FIRESTORE_PROJECT, database=FIRESTORE_DATABASE)
         _USE_MEMORY = False
+        print(f"[STORE] Firestore initialized (db={FIRESTORE_DATABASE})", flush=True)
         return _FIRESTORE_CLIENT
-    except Exception:
-        # No creds / emulator not configured / network — use memory
+    except Exception as e:
+        print(f"[STORE] Firestore init FAILED, using in-memory: {str(e)[:200]}", flush=True)
         _USE_MEMORY = True
         return None
 
@@ -76,7 +88,7 @@ async def create_project(project: Project) -> Project:
         _MEMORY.projects[project.id] = data
         _MEMORY.events[project.id] = []
     else:
-        await db.collection("projects").document(project.id).set(data)
+        db.collection("projects").document(project.id).set(data)
     await log_event(project.id, "project_created", {"logline": project.logline})
     return project
 
@@ -86,7 +98,7 @@ async def get_project(project_id: str) -> Optional[Project]:
     if _USE_MEMORY or db is None:
         data = _MEMORY.projects.get(project_id)
     else:
-        doc = await db.collection("projects").document(project_id).get()
+        doc = db.collection("projects").document(project_id).get()
         data = doc.to_dict() if doc.exists else None
     return Project(**data) if data else None
 
@@ -102,7 +114,7 @@ async def update_project_status(project_id: str, status: str, bible_version: Opt
         update: dict[str, Any] = {"status": status}
         if bible_version is not None:
             update["current_bible_version"] = bible_version
-        await db.collection("projects").document(project_id).update(update)
+        db.collection("projects").document(project_id).update(update)
     await log_event(project_id, "project_status_changed", {"status": status, "bible_version": bible_version})
 
 
@@ -118,7 +130,7 @@ async def save_bible(project_id: str, bible: FilmBible) -> FilmBible:
     if _USE_MEMORY or db is None:
         _MEMORY.bibles[key] = data
     else:
-        await db.collection("bibles").document(key).set(data)
+        db.collection("bibles").document(key).set(data)
     await log_event(project_id, "bible_built" if bible.version == 1 else "bible_edited",
                     {"version": bible.version})
     return bible
@@ -131,7 +143,7 @@ async def get_bible(project_id: str, version: Optional[int] = None) -> Optional[
         if _USE_MEMORY or db is None:
             data = _MEMORY.bibles.get(key)
         else:
-            doc = await db.collection("bibles").document(key).get()
+            doc = db.collection("bibles").document(key).get()
             data = doc.to_dict() if doc.exists else None
         return FilmBible(**data) if data else None
     # no version — get the latest by querying all versions for this project
@@ -147,7 +159,7 @@ async def get_bible(project_id: str, version: Optional[int] = None) -> Optional[
         docs = (db.collection("bibles")
                  .where("project_id", "==", project_id)  # type: ignore[arg-type]
                  .order_by("version", direction="DESCENDING").limit(1).stream())
-        async for doc in docs:
+        for doc in docs:
             return FilmBible(**doc.to_dict())
         return None
 
@@ -162,8 +174,7 @@ async def save_shot(shot: ShotSpec, project_id: str) -> ShotSpec:
     if _USE_MEMORY or db is None:
         _MEMORY.shots[shot.id] = data
     else:
-        await db.collection("shots").document(shot.id).set(data)
-    await log_event(project_id, "shot_list_generated", {"shot_id": shot.id, "order": shot.order})
+        db.collection("shots").document(shot.id).set(data)
     return shot
 
 
@@ -173,7 +184,7 @@ async def get_shots(project_id: str) -> list[ShotSpec]:
         rows = [s for s in _MEMORY.shots.values() if s.get("projectId") == project_id]
     else:
         docs = db.collection("shots").where("projectId", "==", project_id).stream()
-        rows = [doc.to_dict() async for doc in docs]
+        rows = [doc.to_dict() for doc in docs]
     rows.sort(key=lambda r: r.get("order", 0))
     return [ShotSpec(**{k: v for k, v in r.items() if k != "projectId"}) for r in rows]
 
@@ -256,7 +267,7 @@ async def cache_get_search(project_id: str, query: str) -> Optional[list[dict]]:
     if _USE_MEMORY or db is None:
         row = _MEMORY.search_cache.get(key)
     else:
-        doc = await db.collection("search_cache").document(key).get()
+        doc = db.collection("search_cache").document(key).get()
         row = doc.to_dict() if doc.exists else None
     if not row:
         return None
@@ -278,7 +289,7 @@ async def cache_set_search(project_id: str, query: str, results: list[dict]) -> 
     if _USE_MEMORY or db is None:
         _MEMORY.search_cache[key] = row
     else:
-        await db.collection("search_cache").document(key).set(row)
+        db.collection("search_cache").document(key).set(row)
 
 
 # --------------------------------------------------------------------------- #
@@ -295,8 +306,8 @@ async def log_event(project_id: str, event_type: str, payload: Optional[dict] = 
     if _USE_MEMORY or db is None:
         _MEMORY.events.setdefault(project_id, []).append(evt)
     else:
-        await (db.collection("projects").document(project_id)
-                .collection("events").add(evt))
+        # Sync Firestore client — call directly (no await)
+        db.collection("projects").document(project_id).collection("events").add(evt)
 
 
 async def get_events(project_id: str) -> list[dict]:
@@ -305,4 +316,4 @@ async def get_events(project_id: str) -> list[dict]:
         return _MEMORY.events.get(project_id, [])
     else:
         docs = db.collection("projects").document(project_id).collection("events").stream()
-        return [doc.to_dict() async for doc in docs]
+        return [doc.to_dict() for doc in docs]

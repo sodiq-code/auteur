@@ -52,13 +52,16 @@ async def build_bible(project: Project) -> FilmBible:
     await versioning.commit_bible_version(project.id, bible)
 
     # 4. Generate the shot list from the story beats (blueprint Day 7 prerequisite)
-    shots = await generate_shot_list(project, bible)
+    # Only generate if no shots exist yet (avoid duplicates on re-build)
+    existing_shots = await store.get_shots(project.id)
+    if not existing_shots:
+        shots = await generate_shot_list(project, bible)
 
     return bible
 
 
 async def generate_shot_list(project: Project, bible: FilmBible) -> list[ShotSpec]:
-    """Generate a shot list (max 4) with explicit bible references per shot.
+    """Generate a shot list (max 4) from the bible's story beats.
 
     Called automatically after the bible is built, so the generation pipeline
     (Day 7) has shots to generate.
@@ -170,33 +173,3 @@ async def _synthesize_bible(logline: str, refs: list) -> FilmBible:
         style_anchors=style_anchors,
         story_beats=story_beats,
     )
-
-
-async def generate_shot_list(project: Project, bible: FilmBible) -> list[ShotSpec]:
-    """Generate a shot list (max 4) with explicit bible references per shot."""
-    prompt = (
-        "You are Auteur's Director Agent. Generate a shot list for this Film Bible. "
-        f"Return STRICT JSON. Maximum 4 shots (hackathon scope).\n\n"
-        f"BIBLE: {bible.model_dump_json(indent=2)}\n\n"
-        "Return JSON: {\"shots\": [{\"order\": 1, \"description\": \"...\", "
-        "\"character_names\": [\"...\"], \"location_name\": \"...\", "
-        "\"modality_calls\": [\"veo\", \"chirp\", \"lyria\"]}]}\n"
-    )
-    data = await gemini.pro_generate_json(prompt, temperature=0.3)
-    shots = []
-    char_by_name = {c.name: c for c in bible.characters}
-    loc_by_name = {l.name: l for l in bible.locations}
-    for s in data.get("shots", [])[:4]:
-        char_ids = [char_by_name[n].id for n in s.get("character_names", []) if n in char_by_name]
-        loc = loc_by_name.get(s.get("location_name", ""))
-        shots.append(ShotSpec(
-            order=s.get("order", len(shots) + 1),
-            description=s.get("description", ""),
-            bible_version=bible.version,
-            character_ids=char_ids,
-            location_id=loc.id if loc else None,
-            modality_calls=s.get("modality_calls", ["veo", "chirp", "lyria"]),
-        ))
-        await store.save_shot(shots[-1], project.id)
-    await store.log_event(project.id, "shot_list_generated", {"count": len(shots)})
-    return shots

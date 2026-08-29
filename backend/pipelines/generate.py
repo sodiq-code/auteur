@@ -79,10 +79,15 @@ async def generate_shot(
 
     elapsed = round(time.time() - t0, 2)
 
-    # Update shot status
+    # Update shot status — use save_shot (works for both Firestore + in-memory)
     all_ok = all(r.get("status") == "ok" for r in results.values()) if results else False
     new_status = "generated" if all_ok else "generating"
-    await _update_shot_status(project_id, shot.id, new_status)
+    # Re-save the shot with updated status (works for both Firestore + in-memory)
+    shot.status = new_status  # type: ignore[misc]
+    await store.save_shot(shot, project_id)
+    await store.log_event(project_id, "shot_status_changed", {
+        "shotId": shot.id, "new_status": new_status,
+    })
 
     await store.log_event(project_id, "generation_completed", {
         "shotId": shot.id,
@@ -282,9 +287,13 @@ def _build_lyria_prompt(bible: FilmBible) -> str:
 
 
 async def _update_shot_status(project_id: str, shot_id: str, status: str) -> None:
-    """Update a shot's status in the store."""
-    # The store doesn't have a direct update_shot_status; we use save_shot with
-    # the existing shot + new status. For now, log it (full shot update in Day 8).
+    """Update a shot's status in the store (persists so GET /shots returns it)."""
+    shots = await store.get_shots(project_id)
+    for shot in shots:
+        if shot.id == shot_id:
+            shot.status = status  # type: ignore
+            await store.save_shot(shot, project_id)
+            break
     await store.log_event(project_id, "shot_status_changed", {
         "shotId": shot_id, "new_status": status,
     })
