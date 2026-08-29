@@ -211,11 +211,12 @@ async def save_generation(project_id: str, shot_id: str, modality: str, data: di
     """
     key = _gen_key(project_id, shot_id, modality)
     _GENERATIONS[key] = data
-    # also log to Firestore events (without the large bytes)
-    await log_event(project_id, "generation_saved", {
-        "shotId": shot_id, "modality": modality,
-        "size_bytes": data.get("size_bytes", 0),
-    })
+    # Only log to Firestore if project_id is valid (not empty)
+    if project_id:
+        await log_event(project_id, "generation_saved", {
+            "shotId": shot_id, "modality": modality,
+            "size_bytes": data.get("size_bytes", 0),
+        })
 
 
 async def get_generation(project_id: str, shot_id: str, modality: str) -> dict[str, Any] | None:
@@ -303,7 +304,7 @@ async def log_event(project_id: str, event_type: str, payload: Optional[dict] = 
         "payload": payload or {},
     }
     db = _get_firestore()
-    if _USE_MEMORY or db is None:
+    if _USE_MEMORY or db is None or not project_id:
         _MEMORY.events.setdefault(project_id, []).append(evt)
     else:
         # Sync Firestore client — call directly (no await)
