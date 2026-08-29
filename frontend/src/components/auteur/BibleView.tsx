@@ -94,7 +94,7 @@ export function BibleView() {
           <div className="grid gap-4 sm:grid-cols-2">
             {bible.characters.map((c) => (
               <div key={c.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
-                {c.reference_image_url && (
+                {c.reference_image_url && !c.reference_image_url.startsWith("generated:") && (
                   <div className="relative mb-3 aspect-video overflow-hidden rounded-md border border-zinc-800">
                     <Image
                       src={c.reference_image_url}

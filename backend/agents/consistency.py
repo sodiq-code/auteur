@@ -52,9 +52,17 @@ async def check_shot(
     )
     try:
         data = json.loads(text)
-    except json.JSONDecodeError:
-        data = {"_raw": text, "overall": 0.0, "recommendation": "accept",
+    except (json.JSONDecodeError, TypeError):
+        data = {"_raw": str(text)[:200], "overall": 0.0, "recommendation": "accept",
                 "notes": "consistency check skipped (JSON parse failed)"}
+
+    # Handle case where Gemini returns a list instead of a dict
+    if isinstance(data, list):
+        data = data[0] if data else {}
+
+    if not isinstance(data, dict):
+        data = {"overall": 0.0, "recommendation": "accept",
+                "notes": "consistency check returned non-dict response"}
 
     overall = float(data.get("overall", 0.0))
     data["drift_score"] = round(1.0 - overall, 3)  # drift = 1 - consistency

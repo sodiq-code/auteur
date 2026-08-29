@@ -43,12 +43,13 @@ async def generate_shot(
     })
 
     # Build the prompts from the Bible + shot description
+    # Use the per-project character reference as the Veo ASSET ref
     char_ref_png = None
     if bible.characters:
-        # Use the first character's reference image if available
-        # (in production, this would be a Cloud Storage URI; for now
-        # the Day-1 validation images serve as the canonical reference)
-        pass  # Veo will use text-to-video if no char ref (Day 11 wires the real ASSET ref)
+        char = bible.characters[0]
+        char_gen = await store.get_generation("", char.id, "character_ref")
+        if char_gen and char_gen.get("png_bytes"):
+            char_ref_png = char_gen["png_bytes"]
 
     veo_prompt = _build_veo_prompt(shot, bible)
     tts_line = _build_tts_line(shot, bible)

@@ -53,12 +53,8 @@ export function ConsistencyView() {
     }
   }
 
-  // 2. Only auto-run if shots have been generated
-  useEffect(() => {
-    if (project && shotsReady && !result && !loading) {
-      handleCheck();
-    }
-  }, [project, shotsReady]);
+  // 2. Only auto-run if shots have been generated — DON'T auto-run, let user click the button
+  // (auto-running causes issues when shots are generated on a different Cloud Run instance)
 
   const meanOverall = result?.mean_overall ?? 0;
   const threshold = result?.threshold ?? 0.25;
