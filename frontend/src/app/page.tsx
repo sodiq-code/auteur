@@ -24,6 +24,7 @@ import { AssemblyView } from "@/components/auteur/AssemblyView";
 import { ShareView } from "@/components/auteur/ShareView";
 import { HealthPanel } from "@/components/auteur/HealthPanel";
 import { ShotDetailDialog } from "@/components/auteur/ShotDetailDialog";
+import { KeyboardShortcutsHelp } from "@/components/auteur/KeyboardShortcutsHelp";
 
 const NAV_ITEMS: { view: StudioView; label: string; icon: typeof Film; step?: number }[] = [
   { view: "landing", label: "Home", icon: Home },
@@ -43,6 +44,7 @@ export default function Page() {
   const [health, setHealthState] = useState<HealthStatus | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [healthPanelOpen, setHealthPanelOpen] = useState(false);
+  const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
   const [detailShot, setDetailShot] = useState<{ id: number; label: string; scene: string; frame: string; scores: { face: number; age: number; beard: number; wardrobe: number; overall: number }; notes: string } | null>(null);
 
   useEffect(() => {
@@ -54,6 +56,7 @@ export default function Page() {
   // keyboard shortcuts
   useKeyboardShortcuts({
     onToggleHealth: () => setHealthPanelOpen((v) => !v),
+    onToggleShortcutsHelp: () => setShortcutsHelpOpen((v) => !v),
     onLoadDemo: () => {
       // load the canonical lighthouse-keeper demo into the store
       const demoRefs: Reference[] = [
@@ -150,6 +153,14 @@ export default function Page() {
             >
               <Github className="h-4 w-4" />
             </Link>
+            <button
+              onClick={() => setShortcutsHelpOpen(true)}
+              className="hidden h-8 items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-2.5 text-xs font-medium text-zinc-400 transition hover:text-zinc-200 sm:flex"
+              title="Keyboard shortcuts (⌘K)"
+            >
+              <span className="auteur-kbd">⌘</span>
+              <span className="auteur-kbd">K</span>
+            </button>
             <Link
               href="https://auteur-dev-jbkbgthudq-uc.a.run.app/docs"
               target="_blank"
@@ -262,6 +273,9 @@ export default function Page() {
 
       {/* Slide-over health panel (press ?) */}
       <HealthPanel open={healthPanelOpen} onClose={() => setHealthPanelOpen(false)} />
+
+      {/* Keyboard shortcuts command palette (press ⌘K) */}
+      <KeyboardShortcutsHelp open={shortcutsHelpOpen} onClose={() => setShortcutsHelpOpen(false)} />
 
       {/* Shot detail dialog (click a shot in the grid) */}
       <ShotDetailDialog shot={detailShot} open={!!detailShot} onOpenChange={(v) => !v && setDetailShot(null)} />

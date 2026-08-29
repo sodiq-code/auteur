@@ -8,7 +8,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Film, Play, Sparkles, ArrowRight, Zap, Check, Loader2 } from "lucide-react";
+import { Film, Play, Sparkles, ArrowRight, Zap, Check, Loader2, Edit3, Search, BookOpen, Clapperboard } from "lucide-react";
 import { useStudio } from "@/lib/store";
 import { getDemo, type DemoData } from "@/lib/api";
 import { SideBySide } from "@/components/auteur/SideBySide";
@@ -49,7 +49,7 @@ export function LandingView() {
         <h1 className="auteur-rise text-4xl font-bold leading-tight tracking-tight text-zinc-100 sm:text-6xl" style={{ animationDelay: "0.1s" }}>
           AI cinema&apos;s memory.
           <br />
-          <span className="bg-gradient-to-r from-teal-400 via-emerald-300 to-amber-300 bg-clip-text text-transparent">
+          <span className="auteur-shimmer bg-gradient-to-r from-teal-400 via-emerald-300 to-amber-300 bg-clip-text text-transparent">
             Consistent across every shot.
           </span>
         </h1>
@@ -109,6 +109,47 @@ export function LandingView() {
           </span>
           <span>~5 min end-to-end</span>
           <span>Google Cloud native</span>
+        </div>
+
+        {/* how it works — 4 steps */}
+        <div className="auteur-rise mt-14 grid grid-cols-2 gap-3 sm:grid-cols-4" style={{ animationDelay: "0.7s" }}>
+          {[
+            { n: "01", t: "Logline", d: "One sentence", icon: Edit3 },
+            { n: "02", t: "Research", d: "Parallel Search", icon: Search },
+            { n: "03", t: "Bible", d: "Gemini 3.1 Pro", icon: BookOpen },
+            { n: "04", t: "Render", d: "Veo + Chirp + Lyria", icon: Clapperboard },
+          ].map((s) => (
+            <div
+              key={s.n}
+              className="group rounded-lg border border-zinc-800/80 bg-zinc-900/30 p-3 text-left transition hover:border-teal-500/30 hover:bg-zinc-900/60"
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <s.icon className="h-4 w-4 text-teal-400" />
+                <span className="font-mono text-[10px] text-zinc-600">{s.n}</span>
+              </div>
+              <div className="text-xs font-semibold text-zinc-200">{s.t}</div>
+              <div className="mt-0.5 text-[10px] text-zinc-500">{s.d}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* partners ribbon */}
+        <div className="auteur-rise mt-10" style={{ animationDelay: "0.8s" }}>
+          <div className="auteur-ribbon-divider mb-4" />
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-zinc-600">
+            <span className="font-medium uppercase tracking-wide text-zinc-500">Powered by</span>
+            <span className="font-mono text-zinc-400">Veo 3.1</span>
+            <span className="text-zinc-800">·</span>
+            <span className="font-mono text-zinc-400">Chirp 3</span>
+            <span className="text-zinc-800">·</span>
+            <span className="font-mono text-zinc-400">Lyria 2</span>
+            <span className="text-zinc-800">·</span>
+            <span className="font-mono text-zinc-400">Imagen 3</span>
+            <span className="text-zinc-800">·</span>
+            <span className="font-mono text-zinc-400">Gemini 3.1 Pro</span>
+            <span className="text-zinc-800">·</span>
+            <span className="font-mono text-amber-400/80">Parallel Search</span>
+          </div>
         </div>
       </div>
     </div>
