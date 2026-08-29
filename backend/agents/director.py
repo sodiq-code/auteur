@@ -114,13 +114,38 @@ async def _synthesize_bible(logline: str, refs: list) -> FilmBible:
     from ..bible.schema import (
         CharacterSpec, LocationSpec, StyleAnchorSpec, StoryBeat, Reference,
     )
-    characters = [CharacterSpec(
-        name=c.get("name", "?"),
-        age=c.get("age"),
-        description=c.get("description", ""),
-        voice_profile=c.get("voice_profile", ""),
-        wardrobe=c.get("wardrobe", ""),
-    ) for c in data.get("characters", [])]
+    from ..integrations import imagen
+
+    characters = []
+    for c in data.get("characters", []):
+        char = CharacterSpec(
+            name=c.get("name", "?"),
+            age=c.get("age"),
+            description=c.get("description", ""),
+            voice_profile=c.get("voice_profile", ""),
+            wardrobe=c.get("wardrobe", ""),
+        )
+        # Generate a character reference image for this character (blueprint Section 22.1 step 3)
+        try:
+            char_prompt = (
+                f"Cinematic portrait photograph of {char.name}, {char.description}. "
+                f"Wearing {char.wardrobe}. Photorealistic, shallow depth of field, "
+                f"muted color grade. Looking just off camera."
+            )
+            img_bytes = await imagen.generate_image(char_prompt)
+            # Store in the generations store so the consistency check can find it
+            from ..bible import store
+            await store.save_generation("", char.id, "character_ref", {
+                "png_bytes": img_bytes,
+                "size_bytes": len(img_bytes),
+            })
+            char.reference_image_url = f"generated:{char.id}"
+            print(f"[DIRECTOR] Generated character reference image for {char.name}: {len(img_bytes)} bytes", flush=True)
+        except Exception as e:
+            import traceback
+            print(f"[DIRECTOR] Character ref generation FAILED: {type(e).__name__}: {str(e)[:300]}", flush=True)
+            traceback.print_exc()
+        characters.append(char)
     locations = [LocationSpec(
         name=l.get("name", "?"),
         description=l.get("description", ""),
