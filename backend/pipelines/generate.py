@@ -184,32 +184,52 @@ async def _run_chirp(project_id: str, shot: ShotSpec, line: str) -> dict:
 
 
 async def _run_lyria(project_id: str, shot: ShotSpec, prompt: str) -> dict:
-    """Lyria 2 score (blueprint Table 40 row 5)."""
+    """Lyria 2 score (blueprint Table 40 row 5).
+
+    Includes retry logic: if the first prompt fails (content filter), retries
+    with a progressively simpler/safer prompt.
+    """
     t0 = time.time()
-    try:
-        wav = await lyria.generate_score(prompt)
-        elapsed = round(time.time() - t0, 2)
-        blob_name = f"{project_id}/{shot.id}_lyria.wav"
+
+    # Build a list of fallback prompts (progressively safer)
+    fallback_prompts = [
+        prompt,  # original
+        f"a gentle ambient cinematic film score, orchestral, sparse",
+        f"a slow melancholic instrumental, solo piano, cinematic",
+        f"ambient background music, calm, cinematic",
+    ]
+
+    last_error = None
+    for i, p in enumerate(fallback_prompts):
         try:
-            uri = cloud_storage.upload_bytes(blob_name, wav, content_type="audio/wav")
-        except Exception:
-            uri = None
-        await store.log_event(project_id, "generation_completed", {
-            "shotId": shot.id, "modality": "lyria", "elapsed_sec": elapsed,
-            "size_bytes": len(wav), "uri": uri,
-        })
-        return {
-            "status": "ok", "modality": "lyria",
-            "model": lyria.LYRIA_MODEL,
-            "size_bytes": len(wav),
-            "uri": uri,
-            "elapsed_sec": elapsed,
-        }
-    except Exception as e:
-        await store.log_event(project_id, "generation_failed", {
-            "shotId": shot.id, "modality": "lyria", "error": str(e)[:200],
-        })
-        return {"status": "failed", "modality": "lyria", "error": str(e)[:200]}
+            wav = await lyria.generate_score(p)
+            elapsed = round(time.time() - t0, 2)
+            blob_name = f"{project_id}/{shot.id}_lyria.wav"
+            try:
+                uri = cloud_storage.upload_bytes(blob_name, wav, content_type="audio/wav")
+            except Exception:
+                uri = None
+            await store.log_event(project_id, "generation_completed", {
+                "shotId": shot.id, "modality": "lyria", "elapsed_sec": elapsed,
+                "size_bytes": len(wav), "uri": uri, "attempt": i + 1,
+            })
+            return {
+                "status": "ok", "modality": "lyria",
+                "model": lyria.LYRIA_MODEL,
+                "size_bytes": len(wav),
+                "uri": uri,
+                "elapsed_sec": elapsed,
+            }
+        except Exception as e:
+            last_error = str(e)[:200]
+            await store.log_event(project_id, "generation_failed", {
+                "shotId": shot.id, "modality": "lyria", "error": last_error,
+                "attempt": i + 1, "prompt": p[:80],
+            })
+            if i < len(fallback_prompts) - 1:
+                await asyncio.sleep(1)  # brief pause before retry
+
+    return {"status": "failed", "modality": "lyria", "error": last_error}
 
 
 # --------------------------------------------------------------------------- #

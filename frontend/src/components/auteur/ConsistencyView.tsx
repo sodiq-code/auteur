@@ -32,7 +32,7 @@ export function ConsistencyView() {
     }
     getShots(project.id)
       .then((data) => {
-        const generated = data.shots.some((s) => s.status === "generated" || s.status === "approved");
+        const generated = data.shots.some((s) => s.status === "generated" || s.status === "approved" || s.status === "generating");
         setShotsReady(generated);
         setCheckingShots(false);
       })

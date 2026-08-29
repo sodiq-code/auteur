@@ -214,7 +214,21 @@ export function RenderQueueView() {
               {shotDone && gs?.totalElapsed && (
                 <div className="mt-2 text-[10px] text-zinc-600">
                   completed in {gs.totalElapsed}s
-                  {shotFailed && " · some modalities failed (check logs)"}
+                  {shotFailed && " · some modalities failed (Lyria may reject violent prompts)"}
+                </div>
+              )}
+
+              {/* Show Veo video thumbnail when generation completes */}
+              {shotDone && shotMods["veo"]?.status === "ok" && project && (
+                <div className="mt-3 overflow-hidden rounded-md border border-zinc-800">
+                  <video
+                    src={`https://auteur-dev-jbkbgthudq-uc.a.run.app/api/projects/${project.id}/shots/${shot.id}/video`}
+                    className="aspect-video w-full object-cover"
+                    muted
+                    loop
+                    onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
+                    onMouseLeave={(e) => (e.target as HTMLVideoElement).pause()}
+                  />
                 </div>
               )}
               {shotFailed && gs?.error && (

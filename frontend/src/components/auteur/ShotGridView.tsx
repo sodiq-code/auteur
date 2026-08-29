@@ -37,7 +37,7 @@ export function ShotGridView({ onShotClick }: { onShotClick?: (shot: { id: numbe
   if (!project) return <EmptyState title="No project" description="Create a project first." ctaLabel="Start" onCta={() => setView("logline")} />;
   if (realShots.length === 0) return <EmptyState title="No shots generated" description="Build a Bible and render shots first." ctaLabel="Start" onCta={() => setView("logline")} />;
 
-  const hasGenerated = realShots.some((s) => s.status === "generated" || s.status === "approved");
+  const hasGenerated = realShots.some((s) => s.status === "generated" || s.status === "approved" || s.status === "generating");
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -63,7 +63,7 @@ export function ShotGridView({ onShotClick }: { onShotClick?: (shot: { id: numbe
       {hasGenerated ? (
         <div className="grid grid-cols-2 gap-3">
           {realShots.map((shot) => {
-            const isGenerated = shot.status === "generated" || shot.status === "approved";
+            const isGenerated = shot.status === "generated" || shot.status === "approved" || shot.status === "generating";
             const videoUrl = `${API_BASE}/api/projects/${project.id}/shots/${shot.id}/video`;
             return (
               <button
