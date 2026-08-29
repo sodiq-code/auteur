@@ -5,7 +5,7 @@
 "use client";
 
 import Image from "next/image";
-import { Share2, Copy, Check, Eye, ArrowLeft, ExternalLink, Film, BookOpen } from "lucide-react";
+import { Share2, Copy, Check, Eye, ArrowLeft, ExternalLink, Film, BookOpen, Volume2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useStudio } from "@/lib/store";
 import { getSharedProject, type SharedProject } from "@/lib/api";
@@ -104,17 +104,33 @@ export function ShareView() {
         <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
           <Film className="h-3.5 w-3.5 text-teal-400" />
           Your film
+          {sharedProject?.film_url && (
+            <Badge className="ml-2 border-0 bg-sky-500/15 text-sky-300">
+              <Volume2 className="mr-1 h-3 w-3" /> with sound
+            </Badge>
+          )}
         </div>
-        <div className="grid grid-cols-2 gap-1 overflow-hidden rounded-xl border border-zinc-800">
-          {["/auteur/day1/shot-1.png", "/auteur/day1/shot-2.png", "/auteur/day1/shot-3.png", "/auteur/day1/shot-4.png"].map((src, i) => (
-            <div key={i} className="relative aspect-video overflow-hidden">
-              <img src={src} alt={`Shot ${i + 1}`} className="h-full w-full object-cover" />
-              <div className="absolute left-2 top-2 rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[10px] text-teal-300 backdrop-blur">
-                #{i + 1}
+        {sharedProject?.film_url ? (
+          <div className="relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
+            <video
+              src={`${API_BASE}${sharedProject.film_url}`}
+              controls
+              playsInline
+              className="aspect-video h-full w-full"
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-1 overflow-hidden rounded-xl border border-zinc-800">
+            {["/auteur/day1/shot-1.png", "/auteur/day1/shot-2.png", "/auteur/day1/shot-3.png", "/auteur/day1/shot-4.png"].map((src, i) => (
+              <div key={i} className="relative aspect-video overflow-hidden">
+                <img src={src} alt={`Shot ${i + 1}`} className="h-full w-full object-cover" />
+                <div className="absolute left-2 top-2 rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[10px] text-teal-300 backdrop-blur">
+                  #{i + 1}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* bible summary */}

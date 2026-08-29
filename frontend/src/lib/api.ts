@@ -236,8 +236,33 @@ export async function checkAllShots(projectId: string): Promise<ConsistencyAllRe
 // Assembly + Share + Export (Table 38 rows 9-13)
 // --------------------------------------------------------------------------- //
 
-export async function assembleFilm(projectId: string): Promise<{ output_url: string | null; status: string }> {
-  return apiFetch(`/api/projects/${projectId}/assemble`, { method: "POST" });
+export interface AudioSummary {
+  voiceover_shots: number;
+  score_shots: number;
+  silent_shots: number;
+  per_shot: Array<{
+    order: number;
+    shot_id: string;
+    duration_seconds: number;
+    voiceover: boolean;
+    score: boolean;
+    mix_mode: string;
+  }>;
+}
+
+export interface AssembleFilmResponse {
+  status: string;
+  output_url: string | null;
+  duration_seconds: number;
+  clip_count: number;
+  size_bytes: number;
+  has_audio: boolean;
+  audio: AudioSummary;
+  elapsed_sec: number;
+}
+
+export async function assembleFilm(projectId: string): Promise<AssembleFilmResponse> {
+  return apiFetch<AssembleFilmResponse>(`/api/projects/${projectId}/assemble`, { method: "POST" });
 }
 
 export async function createShareLink(projectId: string): Promise<{ public_slug: string; share_url: string }> {

@@ -159,13 +159,21 @@ async def _run_chirp(project_id: str, shot: ShotSpec, line: str) -> dict:
     try:
         pcm = await chirp.generate_voiceover(line, voice_name="Charon")
         elapsed = round(time.time() - t0, 2)
-        # Wrap PCM as WAV
+        # Wrap PCM as WAV (24kHz mono 16-bit)
         import wave, io
         buf = io.BytesIO()
         with wave.open(buf, "wb") as w:
             w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000)
             w.writeframes(pcm)
         wav = buf.getvalue()
+        # Persist the WAV bytes for assembly (in-memory store) — REQUIRED so the
+        # assembly pipeline can mux the voiceover into the final film's audio track.
+        await store.save_generation(project_id, shot.id, "chirp", {
+            "wav_bytes": wav,
+            "size_bytes": len(wav),
+            "elapsed_sec": elapsed,
+            "model": chirp.TTS_MODEL,
+        })
         blob_name = f"{project_id}/{shot.id}_chirp.wav"
         try:
             uri = cloud_storage.upload_bytes(blob_name, wav, content_type="audio/wav")
@@ -210,6 +218,15 @@ async def _run_lyria(project_id: str, shot: ShotSpec, prompt: str) -> dict:
         try:
             wav = await lyria.generate_score(p)
             elapsed = round(time.time() - t0, 2)
+            # Persist the WAV bytes for assembly (in-memory store) — REQUIRED so the
+            # assembly pipeline can mux the score into the final film's audio track.
+            await store.save_generation(project_id, shot.id, "lyria", {
+                "wav_bytes": wav,
+                "size_bytes": len(wav),
+                "elapsed_sec": elapsed,
+                "model": lyria.LYRIA_MODEL,
+                "attempt": i + 1,
+            })
             blob_name = f"{project_id}/{shot.id}_lyria.wav"
             try:
                 uri = cloud_storage.upload_bytes(blob_name, wav, content_type="audio/wav")
