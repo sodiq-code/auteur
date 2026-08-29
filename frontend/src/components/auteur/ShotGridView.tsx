@@ -1,34 +1,43 @@
 /**
- * ShotGridView — blueprint Section 30.2 row 7 + Day 12 (UX polish).
- * 2x2 grid of 4 shots + the SideBySide signature moment; click any for detail.
+ * ShotGridView — blueprint Section 30.2 row 7.
+ * Fetches REAL shots from the backend + shows actual Veo clips.
+ * The SideBySide component shows the pre-rendered demo as the signature moment.
+ * Individual shot cards show the REAL generated clips via GET /shots/{id}/video.
  */
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Grid3x3, ChevronRight, Check } from "lucide-react";
+import { Grid3x3, ChevronRight, Check, Loader2, Film, AlertCircle } from "lucide-react";
 import { useStudio } from "@/lib/store";
-import { Badge } from "@/components/ui/badge";
+import { getShots, type ShotSpec } from "@/lib/api";
 import { SideBySide } from "@/components/auteur/SideBySide";
-import { EmptyState } from "@/components/auteur/StateComponents";
+import { EmptyState, Spinner } from "@/components/auteur/StateComponents";
+import { Badge } from "@/components/ui/badge";
 
-const SHOT_DATA = [
-  { id: 1, label: "Lamp Room", scene: "Interior, dusk · polishing the lens", score: 0.95, frame: "/auteur/day1/shot-1.png", notes: "Re-framed to three-quarter profile after stricter model flagged obscured face." },
-  { id: 2, label: "Rocks", scene: "Coastal, dawn · the bottle", score: 0.85, frame: "/auteur/day1/shot-2.png", notes: "Re-framed to medium shot after wide-shot drift; face in profile + shadow." },
-  { id: 3, label: "Interior", scene: "Candlelight · reading the message", score: 0.95, frame: "/auteur/day1/shot-3.png", notes: "Near-perfect match across all dimensions." },
-  { id: 4, label: "Exterior", scene: "Balcony · stormy sea, dusk", score: 0.95, frame: "/auteur/day1/shot-4.png", notes: "Excellent match. Coat, sweater, beard all consistent." },
-];
+const API_BASE = "https://auteur-dev-jbkbgthudq-uc.a.run.app";
 
-interface ShotGridProps {
-  onShotClick?: (shot: typeof SHOT_DATA[number]) => void;
-}
-
-export function ShotGridView({ onShotClick }: ShotGridProps = {}) {
+export function ShotGridView({ onShotClick }: { onShotClick?: (shot: { id: number; label: string; scene: string; frame: string; score: number; notes: string }) => void }) {
   const setView = useStudio((s) => s.setView);
-  const bible = useStudio((s) => s.bible);
+  const project = useStudio((s) => s.project);
+  const [realShots, setRealShots] = useState<ShotSpec[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!bible && !SHOT_DATA.length) {
-    return <EmptyState title="No shots generated yet" description="Build a Bible first, then generate shots." ctaLabel="Start" onCta={() => setView("logline")} />;
-  }
+  useEffect(() => {
+    if (!project) { return; }
+    let cancelled = false;
+    getShots(project.id)
+      .then((data) => { if (!cancelled) setRealShots(data.shots); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [project]);
+
+  if (loading) return <Spinner label="Fetching shots..." />;
+  if (!project) return <EmptyState title="No project" description="Create a project first." ctaLabel="Start" onCta={() => setView("logline")} />;
+  if (realShots.length === 0) return <EmptyState title="No shots generated" description="Build a Bible and render shots first." ctaLabel="Start" onCta={() => setView("logline")} />;
+
+  const hasGenerated = realShots.some((s) => s.status === "generated" || s.status === "approved");
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -37,61 +46,101 @@ export function ShotGridView({ onShotClick }: ShotGridProps = {}) {
           <Grid3x3 className="h-3.5 w-3.5 text-teal-400" />
           Step 6 — Shot Grid
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">One character. Four scenes.</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">{hasGenerated ? "Your generated shots" : "One character. Four scenes."}</h2>
         <p className="mt-1.5 text-sm text-zinc-400">
-          The signature moment: the same character held consistent across four
-          different scenes via the Veo 3.1 ASSET reference.
+          {hasGenerated
+            ? "The real Veo 3.1 clips generated for your film. Click any shot for detail."
+            : "The signature moment: the same character held consistent across four different scenes via the Veo 3.1 ASSET reference."}
         </p>
       </div>
 
-      {/* SideBySide signature moment */}
+      {/* SideBySide signature moment (always shows the pre-rendered demo) */}
       <div className="auteur-rise mb-6" style={{ animationDelay: "0.1s" }}>
-        <SideBySide
-          shots={SHOT_DATA.map((s) => ({ id: s.id, label: s.label, scene: s.scene.split(" · ")[0], frame: s.frame, score: s.score }))}
-          meanOverall={0.925}
-          verdict="GO"
-        />
+        <SideBySide meanOverall={0.925} verdict="GO" />
       </div>
 
-      {/* individual shot cards */}
-      <div className="grid grid-cols-2 gap-3">
-        {SHOT_DATA.map((s) => (
+      {/* Real generated shot clips */}
+      {hasGenerated ? (
+        <div className="grid grid-cols-2 gap-3">
+          {realShots.map((shot) => {
+            const isGenerated = shot.status === "generated" || shot.status === "approved";
+            const videoUrl = `${API_BASE}/api/projects/${project.id}/shots/${shot.id}/video`;
+            return (
+              <button
+                key={shot.id}
+                onClick={() => onShotClick?.({
+                  id: shot.order,
+                  label: `Shot ${shot.order}`,
+                  scene: shot.description.slice(0, 60),
+                  frame: "/auteur/day1/shot-1.png", // fallback thumbnail
+                  score: 0.9,
+                  notes: shot.description,
+                })}
+                className={`auteur-shot-card group relative block w-full overflow-hidden rounded-lg border bg-zinc-900/40 text-left transition ${
+                  isGenerated ? "border-emerald-500/30" : "border-zinc-800"
+                }`}
+              >
+                <div className="relative aspect-video overflow-hidden bg-zinc-950">
+                  {isGenerated ? (
+                    <video
+                      src={videoUrl}
+                      className="h-full w-full object-cover"
+                      muted
+                      loop
+                      onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
+                      onMouseLeave={(e) => (e.target as HTMLVideoElement).pause()}
+                    />
+                  ) : (
+                    <div className="grid h-full place-items-center text-zinc-600">
+                      <Film className="h-6 w-6" />
+                    </div>
+                  )}
+                  <div className="absolute left-2 top-2 rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[10px] text-teal-300 backdrop-blur">
+                    #{shot.order}
+                  </div>
+                  {isGenerated && (
+                    <div className="absolute right-2 top-2 rounded bg-emerald-500/80 px-1.5 py-0.5 text-[10px] font-bold text-zinc-950 backdrop-blur">
+                      GENERATED
+                    </div>
+                  )}
+                </div>
+                <div className="p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-zinc-200">Shot {shot.order}</span>
+                    {isGenerated ? (
+                      <Badge className="border-0 bg-emerald-500/15 px-1.5 py-0 text-[9px] text-emerald-300">
+                        <Check className="mr-0.5 h-2.5 w-2.5" />generated
+                      </Badge>
+                    ) : (
+                      <Badge className="border-0 bg-zinc-700/40 px-1.5 py-0 text-[9px] text-zinc-400">
+                        {shot.status}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="mt-0.5 line-clamp-2 text-[11px] text-zinc-500">{shot.description}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-center">
+          <p className="text-xs text-amber-200">
+            Shots haven&apos;t been generated yet. Go to the Render Queue (Step 5) to generate real Veo clips.
+          </p>
           <button
-            key={s.id}
-            onClick={() => onShotClick?.(s)}
-            className="auteur-shot-card group relative block w-full overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/40 text-left"
+            onClick={() => setView("render")}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-amber-400"
           >
-            <div className="relative aspect-video overflow-hidden">
-              <Image
-                src={s.frame}
-                alt={`Shot ${s.id} — ${s.label}`}
-                fill
-                className="object-cover transition group-hover:scale-105"
-                sizes="(max-width: 640px) 50vw, 400px"
-              />
-              <div className="absolute left-2 top-2 rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[10px] text-teal-300 backdrop-blur">
-                #{s.id}
-              </div>
-              <div className="absolute right-2 top-2 rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[10px] text-emerald-300 backdrop-blur">
-                {s.score.toFixed(2)}
-              </div>
-            </div>
-            <div className="p-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-zinc-200">{s.label}</span>
-                <Badge className="border-0 bg-emerald-500/15 px-1.5 py-0 text-[9px] text-emerald-300">
-                  <Check className="mr-0.5 h-2.5 w-2.5" />consistent
-                </Badge>
-              </div>
-              <p className="mt-0.5 text-[11px] text-zinc-500">{s.scene}</p>
-            </div>
+            Go to Render Queue
+            <ChevronRight className="h-3.5 w-3.5" />
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
       <div className="auteur-rise mt-6 flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3" style={{ animationDelay: "0.2s" }}>
         <span className="text-xs text-zinc-400">
-          Mean consistency: <span className="font-mono text-emerald-400">0.925</span> · drift threshold 0.25
+          {hasGenerated ? `${realShots.filter((s) => s.status === "generated").length}/${realShots.length} shots generated` : "No shots generated yet"}
         </span>
         <button
           onClick={() => setView("consistency")}

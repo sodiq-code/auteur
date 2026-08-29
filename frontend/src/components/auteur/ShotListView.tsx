@@ -21,22 +21,17 @@ export function ShotListView() {
 
   useEffect(() => {
     if (!project) {
-      setLoading(false);
       return;
     }
     let cancelled = false;
-    // Fetch-on-mount pattern: setState in effect is the standard way to load data
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
     getShots(project.id)
       .then((data) => {
         if (cancelled) return;
         setRealShots(data.shots);
         setShots(data.shots);
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setLoading(false);
       })
-      .catch(() => { if (!cancelled) setLoading(false); });
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [project, setShots]);
 
