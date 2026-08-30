@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from ..integrations import parallel_search, gemini
+from ..integrations import parallel_search
 from ..bible import store
 from ..bible.schema import Reference
 
