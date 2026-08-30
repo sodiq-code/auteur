@@ -84,7 +84,7 @@ Three properties make it work:
 
 1. **Typed, not free-text.** Every generation call receives the relevant bible entries as structured context the agent can validate — not prompt noise.
 2. **Versioned, not overwritten.** Every edit creates a new immutable version. Every generation cites which version it used. Drift becomes detectable and attributable across edits.
-3. **Injected, not suggested.** The same character reference, wardrobe, voice profile, and score motif are passed to every Veo, Chirp, Lyria, and Imagen call for the same film. Consistency is enforced by the architecture, not requested by the prompt.
+3. **Injected, not suggested.** The Bible's modality-specific context is injected into each generation call: the character reference image into Veo (as an ASSET reference), the voice profile into Chirp, and the score motif into Lyria. Consistency is enforced by the architecture, not requested by the prompt.
 
 | Collection | Captures |
 |------------|----------|
@@ -269,7 +269,7 @@ flowchart LR
       VEO[Veo 3.1<br/>video]
       CHIRP[Chirp 3<br/>voiceover]
       LYRIA[Lyria 2<br/>score]
-      IMAGEN[Imagen 3<br/>character ref]
+      IMAGEN[gemini-3-pro-image<br/>character ref]
     end
 
     ASM[Assembly<br/>ffmpeg: concat + audio mux]
