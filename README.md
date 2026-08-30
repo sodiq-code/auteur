@@ -8,7 +8,15 @@
 [![Cloud](https://img.shields.io/badge/Cloud-Google%20Cloud%20Run-4285F4.svg)](https://cloud.google.com/run)
 
 <p align="center">
-  <img src="./docs/studio-screenshot.png" alt="Auteur studio UI — the cross-shot consistency signature moment" width="860" />
+  <a href="https://auteur-app-jbkbgthudq-uc.a.run.app">
+    <img src="./docs/studio-screenshot.png" alt="Auteur studio UI — the cross-shot consistency signature moment" width="860" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://auteur-app-jbkbgthudq-uc.a.run.app"><strong>Try the live app →</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://auteur-dev-jbkbgthudq-uc.a.run.app/api/docs">API docs</a>
 </p>
 
 ---
@@ -38,19 +46,6 @@ This converts cross-shot consistency from a *model-capability* problem (which th
 A filmmaker writes one logline. The Director Agent researches it via Parallel Search, synthesizes a typed Film Bible via Gemini 3.1 Pro, generates a 4-shot short film with synchronized voiceover and score, checks each shot for drift against the character reference, and assembles the final MP4 — with the Bible visible and editable at every step. The entire pipeline is one click.
 
 The signature moment: the same character, held consistent across four different scenes, because one agent remembered all of it.
-
----
-
-## Live deployment
-
-| Surface | URL |
-|---------|-----|
-| **Studio UI** | <https://auteur-app-jbkbgthudq-uc.a.run.app> |
-| **Backend API health** | <https://auteur-dev-jbkbgthudq-uc.a.run.app/api/health> |
-| **API docs (Swagger)** | <https://auteur-dev-jbkbgthudq-uc.a.run.app/api/docs> |
-| **Sample production** | <https://auteur-dev-jbkbgthudq-uc.a.run.app/api/demo> |
-
-The deployed app runs the full pipeline. Create a project, submit a logline, and the Director Agent calls Parallel Search at runtime, builds a Film Bible, generates 4 Veo 3.1 clips with Chirp voiceover and Lyria score, checks consistency, and assembles the final film with synchronized audio — end to end.
 
 ---
 
