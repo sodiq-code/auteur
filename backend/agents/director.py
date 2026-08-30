@@ -212,7 +212,7 @@ def _build_bible_from_data(
         if c.voice_profile:
             voice_profiles.append(VoiceProfileSpec(
                 character_id=c.id,
-                voice_model="gemini-2.5-flash-tts",
+                voice_model="gemini-3.1-flash-tts-preview",
                 voice_name="Charon",  # the prebuilt voice used by the TTS integration
                 description=c.voice_profile,
             ))

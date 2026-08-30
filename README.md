@@ -298,7 +298,7 @@ See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full component justification.
 | LLM (orchestration + vision) | `gemini-3.1-pro-preview` via Vertex AI (global region) | Orchestration, Bible synthesis, and vision-based consistency evaluation |
 | Agent framework | Google Agent Development Kit (ADK) | Agent orchestration primitives |
 | Video | Veo 3.1 (`veo-3.1-fast-generate-001`) | ASSET reference images for cross-shot character consistency |
-| Voice | Chirp 3 (`gemini-2.5-flash-tts`) | Prebuilt voices; 24kHz PCM output |
+| Voice | Chirp 3 (`gemini-3.1-flash-tts-preview`) | Prebuilt voices; 24kHz PCM output |
 | Music | Lyria 2 (`lyria-002`) | Cinematic score generation |
 | Image | `gemini-3-pro-image` (global region) | Character reference generation |
 | Persistence | Firestore | Serverless, schema-flexible, sync client |

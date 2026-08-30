@@ -98,7 +98,7 @@ version; every drift report cites its generation ID.
 | Agent framework | Google ADK | **Required by rules (stack lock)** | LangGraph, CrewAI (banned) |
 | LLM | `gemini-3.1-pro-preview` via Vertex AI (global region) | Newest accessible Pro model; text + vision in one call | OpenAI / Anthropic (banned) |
 | Video model | Veo 3.1 (`veo-3.1-fast-generate-001` for iteration, `veo-3.1-generate-001` for final) | Supports ASSET reference images for cross-shot character consistency | Runway / Pika / Sora (banned) |
-| Voice model | Chirp 3 (`gemini-2.5-flash-tts`) | Prebuilt voices; 24kHz PCM output | ElevenLabs (banned) |
+| Voice model | Chirp 3 (`gemini-3.1-flash-tts-preview`) | Prebuilt voices; 24kHz PCM output | ElevenLabs (banned) |
 | Music model | Lyria 2 (`lyria-002`) | Cinematic score generation | Suno / Udio (banned) |
 | Image model | `gemini-3-pro-image` (global region) | Character reference generation (Imagen 3 is deprecated on this project) | Midjourney / DALL-E (banned) |
 | Persistence | Firestore | Serverless, schema-flexible, autoscales | Cloud SQL (overkill) |
