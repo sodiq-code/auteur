@@ -21,31 +21,170 @@
 
 ---
 
+## Same character. Four scenes.
+
+One character reference image is generated from the logline. The Director Agent then produces four shots across four different scenes, each one injecting the same Film Bible as context. The Consistency Check Agent scores each output against the reference.
+
+| Shot | Scene | Face | Age | Beard | Wardrobe | **Overall** |
+|------|-------|------|-----|-------|----------|------------|
+| 1 | Lamp Room (interior, dusk) | 0.95 | 0.95 | 0.95 | 0.95 | **0.95** |
+| 2 | Rocks (coastal, dawn) | 0.80 | 0.90 | 0.90 | 0.90 | **0.85** |
+| 3 | Interior (candlelight) | 0.95 | 0.95 | 0.95 | 0.95 | **0.95** |
+| 4 | Exterior (balcony, storm) | 0.95 | 0.95 | 0.95 | 0.95 | **0.95** |
+
+**Mean overall: 0.925 · Verdict: GO** (drift threshold 0.25)
+
+One Film Bible. Four generations. One coherent character. Full evidence in [`docs/validation-day-1-report.md`](./docs/validation-day-1-report.md).
+
+---
+
+## The 30-second explanation
+
+Auteur is the memory layer for AI filmmaking. It creates a persistent **Film Bible** from real-world research, injects that structured memory into every generation call, automatically checks every shot for character and style drift, and assembles the final film — voiceover and score synchronized — when every shot passes.
+
+The bottleneck in AI cinema is not generation quality. Veo 3.1 already produces gorgeous clips. The bottleneck is **consistency** — characters drift, wardrobes mutate, voices lose continuity across shots. Every existing tool treats each generation call as stateless. Auteur is the layer that makes the agent stateful across the entire film.
+
 ## The problem
 
-Veo 3.1 and Sora 2 produce gorgeous individual clips. The unsolved problem in AI cinema is **not** generation quality — it is **consistency**. Characters drift across shots. Wardrobes mutate. Voices lose continuity. Color grades do not match. The result of four generation calls looks like four different films stitched together, not one film.
+Four generation calls produce four clips that look like four different films stitched together, not one film. The same character walks in with a different face. The wardrobe changes between cuts. The voice doesn't match. The color grade drifts. This is the problem that blocks indie filmmakers and small studios from shipping AI short films today — not the quality of any single clip.
 
-Every existing tool treats each generation call as stateless. There is no persistent project-memory layer that every generation call must obey. This is the bottleneck that blocks indie filmmakers and small studios from shipping AI short films today.
-
-## The insight
+## The breakthrough
 
 **Consistency, not quality, is the bottleneck.** This is a software-architecture problem, not a model-capability problem. The generation models already work. What is missing is a persistent, structured, research-grounded memory of the entire film, injected as typed context into every downstream generation call.
 
-## The one mechanism
+## The Film Bible
 
-Auteur closes that gap with a single architectural primitive: the **Film Bible** — a typed Pydantic schema (characters, locations, wardrobes, voice profiles, score motifs, style anchors, story beats), versioned in Firestore, citable in every generation, with a Gemini-Vision Consistency Check Agent producing drift scores that feed back into re-generation.
+The core primitive. A typed Pydantic schema (characters, locations, wardrobes, voice profiles, score motifs, style anchors, story beats), versioned in Firestore, citable in every generation.
 
-This converts cross-shot consistency from a *model-capability* problem (which the models do not solve) into a *software-architecture* problem (which Auteur solves). Three properties make it work:
+```
+                     Film
+                       │
+                 Bible v1 (immutable)
+                       │
+        ┌──────────────┼──────────────┐
+        │              │              │
+     Shot 1         Shot 2    …    Shot 4
+        │              │              │
+        └──────────────┼──────────────┘
+                       │
+              consistency check (per shot)
+                       │
+                 Bible v2 (new edit)
+                       │
+              future generations cite v2
+```
+
+Three properties make it work:
 
 1. **Typed, not free-text.** Every generation call receives the relevant bible entries as structured context the agent can validate — not prompt noise.
-2. **Versioned, not overwritten.** Every edit creates a new immutable version. Every generation cites which version it used. Drift becomes detectable and attributable.
+2. **Versioned, not overwritten.** Every edit creates a new immutable version. Every generation cites which version it used. Drift becomes detectable and attributable across edits.
 3. **Injected, not suggested.** The same character reference, wardrobe, voice profile, and score motif are passed to every Veo, Chirp, Lyria, and Imagen call for the same film. Consistency is enforced by the architecture, not requested by the prompt.
 
-## What a user sees
+| Collection | Captures |
+|------------|----------|
+| `characters` | Name, age, description, voice profile, wardrobe, reference image |
+| `locations` | Name, era, description, grounding references |
+| `wardrobes` | Garment, fabric, color per character |
+| `voice_profiles` | Voice model, voice name, description per character |
+| `score_motifs` | Prompt, instrument, mood |
+| `style_anchors` | Color grade, aspect ratio, photographic aesthetic, mood |
+| `story_beats` | Ordered narrative beats — the shot list is derived from these |
 
-A filmmaker writes one logline. The Director Agent researches it via Parallel Search, synthesizes a typed Film Bible via Gemini 3.1 Pro, generates a 4-shot short film with synchronized voiceover and score, checks each shot for drift against the character reference, and assembles the final MP4 — with the Bible visible and editable at every step. The entire pipeline is one click.
+## How Auteur works — the closed loop
 
-The signature moment: the same character, held consistent across four different scenes, because one agent remembered all of it.
+```
+   Logline
+      │
+      ▼
+  Research ──────▶ Parallel Search (runtime, visible in UI)
+      │
+      ▼
+  Film Bible v1 (typed, versioned, persisted)
+      │
+      ▼
+  Generate ──────▶ Veo 3.1 + Chirp 3 + Lyria 2 (Bible injected as context)
+      │
+      ▼
+  Consistency Check ─▶ Gemini 3.1 Pro Vision (drift score 0.0–1.0)
+      │
+      ├── PASS (drift ≤ 0.25) ──▶ next shot
+      │
+      └── DRIFT (drift > 0.25) ──▶ regenerate with stricter Bible injection
+                                      │
+                                      ▼
+                              drift tracked across re-generations
+      │
+      ▼
+  Assemble ──────▶ ffmpeg: concat Veo clips + mux voiceover/score → final MP4
+      │
+      ▼
+   Share
+```
+
+The loop is what makes this an agentic system rather than an LLM wrapper: the Consistency Check Agent's drift score feeds back into re-generation decisions, and drift is tracked across re-generations per shot within a project.
+
+## Why Parallel
+
+Generative filmmaking has two memory problems. Auteur solves both.
+
+| Memory problem | Question | Solved by |
+|----------------|----------|-----------|
+| **Creative memory** | What must remain consistent across the film? | The **Film Bible** (typed, versioned, injected) |
+| **World memory** | What should the film know about reality? | **Parallel Search** (runtime, visible, cached) |
+
+```
+                  AUTEUR
+                    │
+         ┌──────────┴──────────┐
+         ▼                     ▼
+   Film Memory           World Knowledge
+         │                     │
+   Film Bible             Parallel Search
+         │                     │
+         └──────────┬──────────┘
+                    ▼
+           Grounded Generation
+                    ▼
+           Consistency Check
+                    ▼
+               Final Film
+```
+
+Parallel is not a bolted-on API. It is one half of the intelligence architecture. The Research Agent calls it at runtime to ground every creative decision (era, location, fashion, slang, music, lighting) in real-world references. The call site is visible in the live Research panel — every query and result streams in real time. If Parallel is unavailable, the Research Agent logs the failure, returns empty refs, and the Director synthesizes the Bible from the logline. The pipeline does not hard-fail. Verified by `backend/tests/test_fallback_no_parallel_key.py`.
+
+## Proof
+
+The claims above are demonstrated, not asserted.
+
+| Capability | Evidence |
+|------------|---------|
+| 4-shot generation (Veo 3.1) | 4 clips, 4 scenes, mean consistency **0.925** — [`docs/validation-day-1-report.md`](./docs/validation-day-1-report.md) |
+| Film Bible persistence | Firestore, versioned, citable — `GET /api/projects/{id}/bible` returns the typed schema |
+| Bible version attribution | Every shot cites its bible version — `GET /api/projects/{id}/shots` |
+| Parallel runtime research | Live Research panel streams queries + results — verified in the deployed UI |
+| Drift detection | Per-shot drift scores (face/age/beard/wardrobe/overall) — `POST /check-all` |
+| Automatic regeneration | Drift > 0.25 triggers re-generation with stricter Bible injection — `POST /regenerate` |
+| Voice + score muxing | Chirp voiceover + Lyria score mixed per shot, mean volume **-23.6 dB** (audible) — `backend/tests/test_assembly_audio.py` |
+| Final MP4 assembly | ffmpeg concat + AAC audio mux, `has_audio=True` — `GET /api/projects/{id}/film` |
+| Deployed end-to-end | Full pipeline on Cloud Run — `backend/tests/e2e_deployed_audio.py` (exit 0) |
+| Graceful degradation | Pipeline runs without PARALLEL_API_KEY — `backend/tests/test_fallback_no_parallel_key.py` (exit 0) |
+| Smoke test | 12/12 endpoints OK — `backend/tests/test_api_smoke.py` |
+
+Run them: `python3 backend/tests/test_api_smoke.py && python3 backend/tests/test_assembly_audio.py && python3 backend/tests/test_fallback_no_parallel_key.py`
+
+## Who this is for
+
+Indie filmmakers and small studios who want to make AI short films and cannot today because the output is incoherent.
+
+**Without Auteur:** filmmaker generates → notices a continuity error → regenerates → manually fixes the prompt → regenerates → loses another character detail → repeats.
+
+**With Auteur:** filmmaker defines the film once → Auteur remembers it → every generation inherits it → every shot is checked → failures trigger regeneration automatically.
+
+The value proposition: less iteration, less manual continuity management, more coherent output. The community exists (Curious Refuge, the Runway AI Film Festival, r/aivideo). The market is underserved, not hypothetical.
+
+## Why the insight holds
+
+"Consistency, not quality, is the bottleneck" is a software-architecture insight, not a model-capability claim — so it cannot be invalidated by the next model release. The mechanism is hard to replicate: the schema must be expressive enough to capture all modalities (character, world, voice, score, style) but constrained enough to be injectable without exceeding token limits; the injection protocol must be deterministic (every Veo call for the same character receives the same Bible context); the consistency check must be calibrated (too strict and every shot fails, too loose and drift slips through). Each is a real engineering constraint, not a prompt trick.
 
 ---
 
@@ -68,7 +207,7 @@ Three agents on Google Agent Development Kit, with a 6-layer memory architecture
 | L5 Rendered artifacts | Cloud Storage | Veo MP4s, Chirp WAVs, Lyria WAVs, character-ref PNGs |
 | L6 Drift history | Firestore | Per-shot drift scores across re-generations |
 
-The Director selects among 6 external tools (Parallel Search, Veo, Chirp, Lyria, Imagen, Gemini Vision) and 3 internal tools (`build_bible`, `generate_shot_list`, `assemble_film`) to move a logline through the full pipeline. The Consistency Check Agent produces a per-shot drift score (0.0–1.0); drift above 0.25 triggers re-generation with stricter Bible injection, and drift is tracked across re-generations per shot. The loop is closed.
+The Director selects among 6 external tools (Parallel Search, Veo, Chirp, Lyria, Imagen, Gemini Vision) and 3 internal tools (`build_bible`, `generate_shot_list`, `assemble_film`) to move a logline through the full pipeline.
 
 ## The studio interface
 
@@ -77,18 +216,6 @@ Ten views map to the filmmaking workflow: **Logline → Research → Bible → S
 The signature moment is the **SideBySide** component: one character reference + four generated shot frames, each with its consistency score, proving the character was held together across four different scenes. It appears on the landing, grid, and share views.
 
 A command palette (⌘K) navigates the workflow with fuzzy-searchable actions. Every view has loading, empty, and error states with retry.
-
-## Who this is for
-
-Indie filmmakers and small studios who want to make AI short films and cannot today because the output is incoherent. The problem is verified and unsolved: Runway Gen-4 reaches ~95% consistency within a single reference image and degrades across many shots; Sora 2 is weaker. No commercial product ships a persistent project-memory layer for generative video.
-
-The community exists: Curious Refuge (~20k members), the Runway AI Film Festival, r/aivideo. The market is underserved, not hypothetical.
-
-## Why the insight holds
-
-"Consistency, not quality, is the bottleneck" is a software-architecture insight, not a model-capability claim — so it cannot be invalidated by the next model release. The mechanism is hard to replicate: the schema must be expressive enough to capture all modalities (character, world, voice, score, style) but constrained enough to be injectable without exceeding token limits; the injection protocol must be deterministic (every Veo call for the same character receives the same Bible context); the consistency check must be calibrated (too strict and every shot fails, too loose and drift slips through). Each of these is a real engineering constraint, not a prompt trick.
-
----
 
 ## Architecture
 
@@ -127,33 +254,7 @@ flowchart LR
 
 The Director Agent is the orchestrator: logline in, research delegated to the Research Agent (Parallel Search at runtime), Bible synthesized via Gemini 3.1 Pro and persisted as an immutable versioned snapshot, shot list generated, each shot's generation call receives the Bible as injected context, the Consistency Agent scores drift per shot, and Assembly concatenates the Veo clips while muxing the Chirp voiceover (full volume) + Lyria score (25% as a bed), trimmed and padded to each shot's exact duration, into the final MP4 with synchronized AAC audio.
 
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full component justification, the 6-layer memory architecture, and the tech-stack decisions.
-
----
-
-## The Film Bible
-
-The Bible is a typed Pydantic model persisted as an immutable, versioned snapshot in Firestore. Every generation call cites the Bible version it was built from.
-
-| Collection | Captures |
-|------------|----------|
-| `characters` | Name, age, description, voice profile, wardrobe, reference image |
-| `locations` | Name, era, description, grounding references |
-| `wardrobes` | Garment, fabric, color per character |
-| `voice_profiles` | Voice model, voice name, description per character |
-| `score_motifs` | Prompt, instrument, mood |
-| `style_anchors` | Color grade, aspect ratio, photographic aesthetic, mood |
-| `story_beats` | Ordered narrative beats — the shot list is derived from these |
-
-Each Bible is an append-only snapshot. Editing a field creates a new version (`bible_v1` → `bible_v2`); the previous version is immutable. Every shot cites the version it was generated from, so drift is attributable across edits.
-
----
-
-## Partner integration — Parallel Search
-
-The Parallel Search API is called at runtime by the Research Agent to ground every creative decision (era, location, fashion, slang, music, lighting) in real-world references. The call site is visible in the live **Research panel** of the deployed UI — every query and result streams in real time. This is the partner integration, called at runtime, not a README mention.
-
-If the Parallel Search API is unavailable (key missing, rate-limited, or the endpoint is down), the Research Agent logs the failure, returns an empty reference list, and the Director Agent synthesizes the Bible from the logline alone via creative inference. The pipeline does not hard-fail on a partner-API outage. This is verified by `backend/tests/test_fallback_no_parallel_key.py`.
+See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full component justification.
 
 ---
 
@@ -161,57 +262,16 @@ If the Parallel Search API is unavailable (key missing, rate-limited, or the end
 
 | Layer | Choice | Why |
 |-------|--------|-----|
-| LLM (orchestration + vision) | `gemini-3.1-pro-preview` via Vertex AI (global region) | Newest accessible Pro model; text + vision in one call |
-| Agent framework | Google Agent Development Kit (ADK) | Required agent framework |
-| Video | Veo 3.1 (`veo-3.1-fast-generate-001`) | Supports ASSET reference images for cross-shot character consistency |
+| LLM (orchestration + vision) | `gemini-3.1-pro-preview` via Vertex AI (global region) | Text + vision in one call |
+| Agent framework | Google Agent Development Kit (ADK) | Agent orchestration primitives |
+| Video | Veo 3.1 (`veo-3.1-fast-generate-001`) | ASSET reference images for cross-shot character consistency |
 | Voice | Chirp 3 (`gemini-2.5-flash-tts`) | Prebuilt voices; 24kHz PCM output |
 | Music | Lyria 2 (`lyria-002`) | Cinematic score generation |
-| Image | `gemini-3-pro-image` (global region) | Character reference generation (Imagen 3 is deprecated on this project) |
+| Image | `gemini-3-pro-image` (global region) | Character reference generation |
 | Persistence | Firestore | Serverless, schema-flexible, sync client |
 | Object storage | Cloud Storage | Rendered MP4s, WAVs, PNGs |
 | Deployment | Cloud Run (min 1, max 10) | Always-warm, autoscaling |
-| Partner integration | Parallel Search API (runtime, visible in UI) | Grounded imagination |
-
----
-
-## Repository structure
-
-```
-auteur/
-├── README.md                       # this file
-├── ARCHITECTURE.md                 # component justification + data flow
-├── RUNBOOK.md                      # operations + troubleshooting runbook
-├── LICENSE                         # MIT
-├── .env.example                    # all required env vars
-├── docs/
-│   ├── studio-screenshot.png       # the studio UI screenshot (above)
-│   ├── api-contract.md             # REST API reference (22 endpoints)
-│   ├── bible-schema.md             # Film Bible schema reference
-│   ├── demo-script.md              # 5-beat demo script
-│   ├── partner-integration.md      # Parallel Search integration notes
-│   └── validation-day-1-report.md  # cross-shot consistency validation
-├── backend/
-│   ├── requirements.txt
-│   ├── main.py                     # FastAPI app + router mounting
-│   ├── agents/                     # Director, Research, Consistency Check (ADK)
-│   ├── bible/                      # schema.py, store.py, versioning.py
-│   ├── pipelines/                  # generate.py, assemble.py, check.py
-│   ├── integrations/               # parallel_search, veo, chirp, lyria, imagen, gemini
-│   ├── api/                        # FastAPI routes (22 endpoints)
-│   ├── prompts/                    # version-controlled prompts
-│   ├── storage/                    # firestore.py, cloud_storage.py
-│   └── tests/
-│       ├── test_api_smoke.py                # 12-endpoint smoke test
-│       ├── test_assembly_audio.py           # audio-mux unit test (synthetic)
-│       ├── test_fallback_no_parallel_key.py # graceful-degradation test
-│       └── e2e_deployed_audio.py            # deployed E2E verification
-├── frontend/                       # Next.js 16 (App Router) — studio UI
-└── infra/
-    ├── cloudbuild.yaml
-    ├── deploy_cloud_run.py         # backend deploy
-    ├── deploy-unified.py           # unified (frontend + backend) deploy
-    └── seed-demo.sh                # sample-production seeding
-```
+| Partner integration | Parallel Search API | Runtime world-knowledge grounding |
 
 ---
 
@@ -259,20 +319,54 @@ curl http://localhost:8000/api/health   # → {"status":"ok", ...}
 ### Run the tests
 
 ```bash
-# Smoke test (start the backend first):
-python3 backend/tests/test_api_smoke.py
-
-# Audio-mux unit test (synthetic inputs, no API calls):
-python3 backend/tests/test_assembly_audio.py
-
-# Graceful-degradation test (no PARALLEL_API_KEY needed):
-python3 backend/tests/test_fallback_no_parallel_key.py
-
-# Deployed E2E test (runs against the live Cloud Run backend):
-python3 backend/tests/e2e_deployed_audio.py
+python3 backend/tests/test_api_smoke.py                # 12/12 endpoints
+python3 backend/tests/test_assembly_audio.py          # audio-mux unit test
+python3 backend/tests/test_fallback_no_parallel_key.py # graceful degradation
+python3 backend/tests/e2e_deployed_audio.py           # deployed E2E
 ```
 
 See [`RUNBOOK.md`](./RUNBOOK.md) for deploy, debug, and rollback procedures.
+
+---
+
+## Repository structure
+
+```
+auteur/
+├── README.md                       # this file
+├── ARCHITECTURE.md                 # component justification + data flow
+├── RUNBOOK.md                      # operations + troubleshooting runbook
+├── LICENSE                         # MIT
+├── .env.example                    # all required env vars
+├── docs/
+│   ├── studio-screenshot.png       # the studio UI screenshot (above)
+│   ├── api-contract.md             # REST API reference (22 endpoints)
+│   ├── bible-schema.md             # Film Bible schema reference
+│   ├── demo-script.md              # 5-beat demo script
+│   ├── partner-integration.md      # Parallel Search integration notes
+│   └── validation-day-1-report.md  # cross-shot consistency validation
+├── backend/
+│   ├── requirements.txt
+│   ├── main.py                     # FastAPI app + router mounting
+│   ├── agents/                     # Director, Research, Consistency Check (ADK)
+│   ├── bible/                      # schema.py, store.py, versioning.py
+│   ├── pipelines/                  # generate.py, assemble.py, check.py
+│   ├── integrations/               # parallel_search, veo, chirp, lyria, imagen, gemini
+│   ├── api/                        # FastAPI routes (22 endpoints)
+│   ├── prompts/                    # version-controlled prompts
+│   ├── storage/                    # firestore.py, cloud_storage.py
+│   └── tests/
+│       ├── test_api_smoke.py                # 12-endpoint smoke test
+│       ├── test_assembly_audio.py           # audio-mux unit test (synthetic)
+│       ├── test_fallback_no_parallel_key.py # graceful-degradation test
+│       └── e2e_deployed_audio.py            # deployed E2E verification
+├── frontend/                       # Next.js 16 (App Router) — studio UI
+└── infra/
+    ├── cloudbuild.yaml
+    ├── deploy_cloud_run.py         # backend deploy
+    ├── deploy-unified.py           # unified (frontend + backend) deploy
+    └── seed-demo.sh                # sample-production seeding
+```
 
 ---
 
