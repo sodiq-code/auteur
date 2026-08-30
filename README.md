@@ -54,36 +54,44 @@ The deployed app runs the full pipeline. Create a project, submit a logline, and
 
 ---
 
-## How this maps to the rubric
+## The agent architecture
 
-The hackathon is scored on four equally-weighted criteria (25% each). Auteur is purpose-built to satisfy all four simultaneously.
+Three agents on Google Agent Development Kit, with a 6-layer memory architecture that keeps ephemeral, persistent, versioned, and historical data in the right store.
 
-### Technological Implementation (25%) — a real multi-agent system, not a wrapper
+| Agent | Model | Role |
+|-------|-------|------|
+| Director | `gemini-3.1-pro-preview` | Orchestrator. Logline in, plans the pipeline, delegates to Research and Consistency, writes the Bible, generates the shot list. |
+| Research | `gemini-3.1-pro-preview` | Calls Parallel Search at runtime, synthesizes typed `Reference` objects. Read-only — returns results to the Director. |
+| Consistency Check | `gemini-3.1-pro-preview` (vision) | Extracts a frame from each Veo clip, scores drift against the character reference, produces an accept/re-generate recommendation. |
 
-| Requirement | How Auteur delivers |
-|-------------|---------------------|
-| Multi-agent system with persistent state | Three agents (Director, Research, Consistency Check) on Google Agent Development Kit, with a 6-layer memory architecture (working memory → project state → versioned Bible → search cache → rendered artifacts → drift history) |
-| Tool use + planning | The Director selects among 6 external tools (Parallel Search, Veo, Chirp, Lyria, Imagen, Gemini Vision) and 3 internal tools (build_bible, generate_shot_list, assemble_film) to move a logline through the full pipeline |
-| Measurable improvement | The Consistency Check Agent produces a per-shot drift score (0.0–1.0); drift > 0.25 triggers re-generation with stricter Bible injection. Drift is tracked across re-generations per shot |
-| Partner API called at runtime | Parallel Search is called at runtime by the Research Agent, visible in the live Research panel — every query and result streams in real time |
-| Clean, structured repo | README, ARCHITECTURE.md, RUNBOOK.md, env-template, smoke tests, audio-mux unit tests, fallback-degradation tests, deployed E2E tests |
-| Live URL judges can test | Cloud Run, min-instances=1 (always warm), public access |
+| Memory layer | Store | Content |
+|--------------|-------|---------|
+| L1 Working | In-process | Current tool-call args + last 5 tool results |
+| L2 Project state | Firestore `projects/{id}` | Project, Bible, shots, generation log |
+| L3 Bible versions | Firestore `bibles/{projectId}_{version}` | Immutable snapshots — every edit creates a new version |
+| L4 Search cache | Firestore `search_cache/{projectId}_{queryHash}` | Parallel Search results, 24h TTL |
+| L5 Rendered artifacts | Cloud Storage | Veo MP4s, Chirp WAVs, Lyria WAVs, character-ref PNGs |
+| L6 Drift history | Firestore | Per-shot drift scores across re-generations |
 
-### Design (25%) — a studio interface any filmmaker understands in 10 seconds
+The Director selects among 6 external tools (Parallel Search, Veo, Chirp, Lyria, Imagen, Gemini Vision) and 3 internal tools (`build_bible`, `generate_shot_list`, `assemble_film`) to move a logline through the full pipeline. The Consistency Check Agent produces a per-shot drift score (0.0–1.0); drift above 0.25 triggers re-generation with stricter Bible injection, and drift is tracked across re-generations per shot. The loop is closed.
 
-The UI is a film studio, not a chatbot. Ten views map to the filmmaking workflow: **Logline → Research → Bible → Shots → Render → Grid → Drift → Assembly → Share**. A filmmaker recognizes the shape immediately: script pane, bible pane, shot grid, render queue, consistency dashboard. The Bible is visible and editable at every step — the user can see what the agent remembers and change it.
+## The studio interface
 
-The signature moment is the **SideBySide** component: one character reference + four generated shot frames, each with its consistency score, proving the character was held together across four different scenes.
+Ten views map to the filmmaking workflow: **Logline → Research → Bible → Shots → Render → Grid → Drift → Assembly → Share**. A filmmaker recognizes the shape immediately — script pane, bible pane, shot grid, render queue, consistency dashboard. The Bible is visible and editable at every step: the user can see what the agent remembers and change it.
 
-### Potential Impact (25%) — a real problem, a real user base
+The signature moment is the **SideBySide** component: one character reference + four generated shot frames, each with its consistency score, proving the character was held together across four different scenes. It appears on the landing, grid, and share views.
 
-The problem is verified and unsolved: Runway Gen-4 reaches ~95% consistency within a single reference image and degrades across many shots; Sora 2 is weaker. No commercial product ships a persistent project-memory layer for generative video.
+A command palette (⌘K) navigates the workflow with fuzzy-searchable actions. Every view has loading, empty, and error states with retry.
 
-The user base is real: indie filmmakers and small studios who want to make AI short films and cannot today because the output is incoherent. The community exists (Curious Refuge ~20k members, the Runway AI Film Festival, r/aivideo). The market is underserved, not hypothetical.
+## Who this is for
 
-### Quality of the Idea (25%) — a defensible insight
+Indie filmmakers and small studios who want to make AI short films and cannot today because the output is incoherent. The problem is verified and unsolved: Runway Gen-4 reaches ~95% consistency within a single reference image and degrades across many shots; Sora 2 is weaker. No commercial product ships a persistent project-memory layer for generative video.
 
-"Consistency, not quality, is the bottleneck" is sharp, supported by every credible source on the state of generative video, and structurally defensible — it is a software-architecture insight, not a model-capability claim, so it cannot be invalidated by the next model release. The mechanism (a typed, versioned, citable Bible injected into every call) is hard to replicate: the schema must be expressive enough to capture all modalities but constrained enough to be injectable without exceeding token limits; the injection protocol must be deterministic; the consistency check must be calibrated.
+The community exists: Curious Refuge (~20k members), the Runway AI Film Festival, r/aivideo. The market is underserved, not hypothetical.
+
+## Why the insight holds
+
+"Consistency, not quality, is the bottleneck" is a software-architecture insight, not a model-capability claim — so it cannot be invalidated by the next model release. The mechanism is hard to replicate: the schema must be expressive enough to capture all modalities (character, world, voice, score, style) but constrained enough to be injectable without exceeding token limits; the injection protocol must be deterministic (every Veo call for the same character receives the same Bible context); the consistency check must be calibrated (too strict and every shot fails, too loose and drift slips through). Each of these is a real engineering constraint, not a prompt trick.
 
 ---
 
