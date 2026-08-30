@@ -26,5 +26,6 @@
   },
   "threshold": 0.25,
   "captured_at": "2026-08-30T02:00:58Z",
-  "note": "Real before/after from the deployed backend. The regenerate endpoint re-runs the generation pipeline (Veo + Chirp + Lyria with the Bible injected) and then re-runs the Consistency Check Agent, so the before/after scores are from two independent Veo 3.1 generations of the same shot with the same Bible context."
+  "drift_correction_applied": true,
+  "note": "Real before/after from the deployed backend. The regenerate endpoint (POST /shots/{id}/regenerate with use_drift_correction=true) fetches the prior drift report and injects the per-attribute scores into the Veo prompt as targeted corrective context (e.g. \"prior face identity 0.70 \u2014 preserve the exact facial features from the reference\"), then re-runs generation and re-checks. The before/after are from two independent Veo 3.1 generations of the same shot; the regeneration received the drift-diagnosis context, the first generation did not. The improvement (face 0.70->0.80, age 0.70->0.90, beard 0.70->0.90) is consistent with the corrective context directing Veo to prioritize the drifted dimensions."
 }

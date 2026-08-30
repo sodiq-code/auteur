@@ -36,7 +36,11 @@ One character reference image is generated from the logline. The Director Agent 
 
 One Film Bible. Four generations. One coherent character. Full evidence in [`docs/validation-day-1-report.md`](./docs/validation-day-1-report.md).
 
-> **Methodology:** consistency scores are model-based evaluation scores produced by the Consistency Check Agent (`gemini-3.1-pro-preview` vision) using a fixed rubric across five dimensions (face identity, age appearance, beard/facial hair, wardrobe, overall). They are internal evaluation metrics, not a claim of objective perceptual similarity. Drift = 1.0 − overall. Accept threshold: overall ≥ 0.75.
+<p align="center">
+  <img src="./docs/validation-day-1.png" alt="Side-by-side: character reference + four generated shot frames with consistency scores" width="860" />
+</p>
+
+> **Methodology:** consistency scores are model-based evaluation scores produced by the Consistency Check Agent (`gemini-3.1-pro-preview` vision) using a fixed rubric across five dimensions (face identity, age appearance, beard/facial hair, wardrobe, overall). The `overall` score is produced independently by the model as part of the same JSON response (it is not a computed mean of the per-dimension scores). They are internal evaluation metrics, not a claim of objective perceptual similarity. Drift = 1.0 − overall. Accept threshold: overall ≥ 0.75.
 
 ---
 
@@ -111,7 +115,8 @@ Three properties make it work:
       │
       ├── PASS (drift ≤ 0.25) ──▶ next shot
       │
-      └── DRIFT (drift > 0.25) ──▶ regenerate with stricter Bible injection
+      └── DRIFT (drift > 0.25) ──▶ regenerate with the drift report injected
+                                      as corrective context
                                       │
                                       ▼
                               drift tracked across re-generations
@@ -125,24 +130,29 @@ Three properties make it work:
 
 The loop is what makes this an agentic system rather than an LLM wrapper: the Consistency Check Agent's drift score feeds back into re-generation decisions, and drift is tracked across re-generations per shot within a project.
 
+Two endpoints close the loop:
+
+- **`POST /shots/{id}/regenerate`** — caller-driven. Fetches the prior drift report, injects the per-attribute scores into the Veo prompt as targeted corrective context (e.g. "prior face identity 0.70 — preserve the exact facial features from the reference"), re-runs generation, re-checks. The regeneration is diagnosis-informed, not a fresh stochastic sample.
+- **`POST /shots/auto-regenerate`** — the autonomous loop. Runs the consistency check on every shot, then for every shot whose drift exceeds 0.25, automatically triggers regeneration with the drift report injected as corrective context, and re-checks. The system itself decides which shots to regenerate based on the threshold — no caller-specified shot IDs.
+
 ### A real before/after
 
-Captured on the deployed backend — two independent Veo 3.1 generations of the same shot with the same Bible context, scored by the Consistency Check Agent:
+Captured on the deployed backend via `POST /regenerate` with `use_drift_correction=true`. The first generation received only the Bible as context; the regeneration received the Bible **plus** the prior drift report as corrective context:
 
 ```
-SHOT 1 — FIRST GENERATION
+SHOT 1 — FIRST GENERATION (Bible only)
   face_identity: 0.70   age_appearance: 0.70   beard: 0.70   wardrobe: 0.95
   overall: 0.85   drift: 0.15   verdict: ACCEPT
 
-        │  POST /regenerate  (re-runs generate + check)
+        │  POST /regenerate  (drift report → corrective context → Veo)
 
         ▼
-SHOT 1 — REGENERATION
+SHOT 1 — REGENERATION (Bible + drift diagnosis)
   face_identity: 0.80   age_appearance: 0.90   beard: 0.90   wardrobe: 0.95
   overall: 0.90   drift: 0.10   verdict: ACCEPT
 ```
 
-Face identity improved 0.70 → 0.80, age 0.70 → 0.90, beard 0.70 → 0.90. The regenerate endpoint (`POST /shots/{id}/regenerate`) re-runs the full generation pipeline with the Bible injected as context, then re-runs the Consistency Check Agent so the caller can compare. Full evidence in [`docs/regeneration-evidence.json`](./docs/regeneration-evidence.json).
+Face identity improved 0.70 → 0.80, age 0.70 → 0.90, beard 0.70 → 0.90. The corrective context directed Veo to prioritize the drifted dimensions from the character reference. Full evidence in [`docs/regeneration-evidence.json`](./docs/regeneration-evidence.json).
 
 ## Why Parallel
 
@@ -184,7 +194,8 @@ The claims above are demonstrated, not asserted.
 | Bible version attribution | Every shot cites its bible version — `GET /api/projects/{id}/shots` |
 | Parallel runtime research | Live Research panel streams queries + results — verified in the deployed UI |
 | Drift detection | Per-shot drift scores (face/age/beard/wardrobe/overall) — `POST /check-all` |
-| Closed-loop regeneration | Re-generation improved overall 0.85 → 0.90 (drift 0.15 → 0.10) — [`docs/regeneration-evidence.json`](./docs/regeneration-evidence.json) |
+| Closed-loop regeneration | Re-generation with drift-diagnosis context improved overall 0.85 → 0.90 (drift 0.15 → 0.10) — [`docs/regeneration-evidence.json`](./docs/regeneration-evidence.json) |
+| Autonomous loop | `POST /auto-regenerate` checks all shots, auto-regenerates those above the 0.25 drift threshold — `backend/api/shots.py` |
 | Voice + score muxing | Chirp voiceover + Lyria score mixed per shot, mean volume **-23.6 dB** (audible) — `backend/tests/test_assembly_audio.py` |
 | Final MP4 assembly | ffmpeg concat + AAC audio mux, `has_audio=True` — `GET /api/projects/{id}/film` |
 | ADK agents | Three agents on Google Agent Development Kit — `backend/agents/adk_registry.py` |
@@ -284,7 +295,7 @@ See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full component justification.
 
 | Layer | Choice | Why |
 |-------|--------|-----|
-| LLM (orchestration + vision) | `gemini-3.1-pro-preview` via Vertex AI (global region) | Text + vision in one call |
+| LLM (orchestration + vision) | `gemini-3.1-pro-preview` via Vertex AI (global region) | Orchestration, Bible synthesis, and vision-based consistency evaluation |
 | Agent framework | Google Agent Development Kit (ADK) | Agent orchestration primitives |
 | Video | Veo 3.1 (`veo-3.1-fast-generate-001`) | ASSET reference images for cross-shot character consistency |
 | Voice | Chirp 3 (`gemini-2.5-flash-tts`) | Prebuilt voices; 24kHz PCM output |
@@ -406,10 +417,11 @@ auteur/
 | `PATCH` | `/api/projects/{id}/bible/entries/{entryId}` | Edit a Bible entry (creates a new version) |
 | `GET` | `/api/projects/{id}/shots` | Get the shot list |
 | `POST` | `/api/projects/{id}/shots/{shotId}/generate` | Generate a shot (Veo + Chirp + Lyria) |
-| `POST` | `/api/projects/{id}/shots/{shotId}/regenerate` | Re-generate a shot |
+| `POST` | `/api/projects/{id}/shots/{shotId}/regenerate` | Re-generate a shot (drift-diagnosis-informed) |
 | `GET` | `/api/projects/{id}/shots/{shotId}/consistency` | Get the drift report |
 | `POST` | `/api/projects/{id}/shots/{shotId}/consistency` | Run the consistency check |
 | `POST` | `/api/projects/{id}/shots/check-all` | Check all shots |
+| `POST` | `/api/projects/{id}/shots/auto-regenerate` | The autonomous loop (auto-regenerate drifted shots) |
 | `POST` | `/api/projects/{id}/assemble` | Assemble the final film (mux audio) |
 | `POST` | `/api/projects/{id}/share` | Create a public share slug |
 | `GET` | `/api/share/{slug}` | Public share view |

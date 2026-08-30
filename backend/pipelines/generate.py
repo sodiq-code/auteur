@@ -26,12 +26,19 @@ async def generate_shot(
     project_id: str,
     shot: ShotSpec,
     bible: FilmBible,
+    drift_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Generate all modalities for one shot (blueprint Day 7 DoD).
+    """Generate all modalities for one shot.
 
     Runs Veo (video) + Chirp (voice) + Lyria (music) concurrently.
-    Each modality is independent — if one fails, the others still complete
-    (blueprint Table 40 per-API failure handling).
+    Each modality is independent — if one fails, the others still complete.
+
+    When `drift_report` is provided (the closed-loop regeneration path), the
+    previous consistency failure is injected into the Veo prompt as targeted
+    corrective context — "the prior generation scored X on face identity,
+    Y on wardrobe; prioritize the exact facial features from the reference."
+    This establishes causality: the regeneration is not a fresh stochastic
+    sample, it is a diagnosis-informed correction.
 
     Returns a dict with per-modality status + output URIs + total elapsed.
     """
@@ -40,6 +47,8 @@ async def generate_shot(
         "shotId": shot.id, "order": shot.order,
         "bible_version": shot.bible_version,
         "modalities": shot.modality_calls,
+        "regeneration": drift_report is not None,
+        "prior_drift": drift_report.get("drift_score") if drift_report else None,
     })
 
     # Build the prompts from the Bible + shot description
@@ -51,7 +60,7 @@ async def generate_shot(
         if char_gen and char_gen.get("png_bytes"):
             char_ref_png = char_gen["png_bytes"]
 
-    veo_prompt = _build_veo_prompt(shot, bible)
+    veo_prompt = _build_veo_prompt(shot, bible, drift_report=drift_report)
     tts_line = _build_tts_line(shot, bible)
     lyria_prompt = _build_lyria_prompt(bible)
 
@@ -259,8 +268,19 @@ async def _run_lyria(project_id: str, shot: ShotSpec, prompt: str) -> dict:
 # Prompt builders — inject the Bible as context (the core innovation)
 # --------------------------------------------------------------------------- #
 
-def _build_veo_prompt(shot: ShotSpec, bible: FilmBible) -> str:
-    """Build the Veo prompt with Bible context injected (blueprint Section 17)."""
+def _build_veo_prompt(
+    shot: ShotSpec,
+    bible: FilmBible,
+    drift_report: dict[str, Any] | None = None,
+) -> str:
+    """Build the Veo prompt with Bible context injected.
+
+    When `drift_report` is provided (the regeneration path), the prior
+    consistency failure is injected as targeted corrective context: the
+    agent tells Veo exactly which dimensions drifted and which to preserve,
+    converting the regeneration from a fresh stochastic sample into a
+    diagnosis-informed correction.
+    """
     parts = [shot.description]
     if bible.characters:
         c = bible.characters[0]
@@ -280,7 +300,48 @@ def _build_veo_prompt(shot: ShotSpec, bible: FilmBible) -> str:
             parts.append(f"color grade: {s.color_grade}")
         if s.photographic_aesthetic:
             parts.append(s.photographic_aesthetic)
+
+    # Closed-loop regeneration: inject the prior drift diagnosis as corrective
+    # context. This is what makes the regeneration causal rather than a fresh
+    # stochastic sample — the agent tells Veo exactly what drifted and which
+    # dimensions to prioritize from the character reference.
+    if drift_report:
+        parts.append(_build_corrective_context(drift_report))
+
     return ". ".join(parts) + ". Cinematic, photorealistic, 24fps."
+
+
+def _build_corrective_context(drift_report: dict[str, Any]) -> str:
+    """Translate a drift report into targeted corrective context for Veo.
+
+    The drift report has per-attribute scores (face_identity, age_appearance,
+    beard_facial_hair, wardrobe, overall) on a 0.0–1.0 scale. Attributes
+    scoring below 0.8 are flagged as drift sources; the prompt instructs Veo
+    to prioritize those dimensions from the reference image.
+    """
+    dims = [
+        ("face_identity", "facial identity", "Preserve the exact facial features, jaw shape, and eye color from the reference image"),
+        ("age_appearance", "apparent age", "Match the apparent age of the character in the reference image"),
+        ("beard_facial_hair", "beard and facial hair", "Preserve the exact beard style, length, and color from the reference"),
+        ("wardrobe", "wardrobe", "Keep the wardrobe identical to the reference: same garment, fabric, and color"),
+    ]
+    flags = []
+    for key, label, instruction in dims:
+        score = drift_report.get(key)
+        if isinstance(score, (int, float)) and score < 0.8:
+            flags.append(f"{label} (prior score {score:.2f}): {instruction}")
+    if not flags:
+        # No specific dimension flagged below 0.8 — provide general guidance
+        return (
+            f"CONSISTENCY NOTE: the prior generation scored overall "
+            f"{drift_report.get('overall', '?')} (drift {drift_report.get('drift_score', '?')}). "
+            "Prioritize fidelity to the character reference image across all dimensions"
+        )
+    return (
+        "CONSISTENCY CORRECTION — the prior generation drifted on these dimensions; "
+        "prioritize them from the reference image: "
+        + "; ".join(flags)
+    )
 
 
 def _build_tts_line(shot: ShotSpec, bible: FilmBible) -> str:
