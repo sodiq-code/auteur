@@ -125,8 +125,11 @@ async def update_project_status(project_id: str, status: str, bible_version: Opt
 async def save_bible(project_id: str, bible: FilmBible) -> FilmBible:
     """Persist a Bible as an immutable versioned snapshot (blueprint 23.3)."""
     key = f"{project_id}_{bible.version}"
+    # Also store project_id + version as top-level fields for simple queries
     db = _get_firestore()
     data = bible.model_dump(mode="json")
+    data["project_id"] = project_id
+    data["version_num"] = bible.version
     if _USE_MEMORY or db is None:
         _MEMORY.bibles[key] = data
     else:
@@ -145,22 +148,33 @@ async def get_bible(project_id: str, version: Optional[int] = None) -> Optional[
         else:
             doc = db.collection("bibles").document(key).get()
             data = doc.to_dict() if doc.exists else None
+        if data:
+            data.pop("project_id", None)
+            data.pop("version_num", None)
         return FilmBible(**data) if data else None
-    # no version — get the latest by querying all versions for this project
+    # no version — get the latest by trying version 1, 2, 3... (avoids composite index)
     if _USE_MEMORY or db is None:
         candidates = [k for k in _MEMORY.bibles if k.startswith(f"{project_id}_")]
         if not candidates:
             return None
-        # highest version
         latest_key = max(candidates, key=lambda k: int(k.rsplit("_", 1)[1]))
-        return FilmBible(**_MEMORY.bibles[latest_key])
+        data = _MEMORY.bibles[latest_key]
+        data.pop("project_id", None)
+        data.pop("version_num", None)
+        return FilmBible(**data)
     else:
-        # query for latest version for this project
-        docs = (db.collection("bibles")
-                 .where("project_id", "==", project_id)  # type: ignore[arg-type]
-                 .order_by("version", direction="DESCENDING").limit(1).stream())
-        for doc in docs:
-            return FilmBible(**doc.to_dict())
+        # Try version 1 first, then 2, 3 (avoids needing a composite index)
+        for v in [1, 2, 3, 4, 5]:
+            key = f"{project_id}_{v}"
+            doc = db.collection("bibles").document(key).get()
+            if doc.exists:
+                data = doc.to_dict()
+                data.pop("project_id", None)
+                data.pop("version_num", None)
+                return FilmBible(**data)
+            # If v=1 doesn't exist, no bible yet
+            if v == 1 and not doc.exists:
+                return None
         return None
 
 
@@ -211,11 +225,12 @@ async def save_generation(project_id: str, shot_id: str, modality: str, data: di
     """
     key = _gen_key(project_id, shot_id, modality)
     _GENERATIONS[key] = data
-    # also log to Firestore events (without the large bytes)
-    await log_event(project_id, "generation_saved", {
-        "shotId": shot_id, "modality": modality,
-        "size_bytes": data.get("size_bytes", 0),
-    })
+    # Only log to Firestore if project_id is valid (not empty)
+    if project_id:
+        await log_event(project_id, "generation_saved", {
+            "shotId": shot_id, "modality": modality,
+            "size_bytes": data.get("size_bytes", 0),
+        })
 
 
 async def get_generation(project_id: str, shot_id: str, modality: str) -> dict[str, Any] | None:
@@ -303,7 +318,7 @@ async def log_event(project_id: str, event_type: str, payload: Optional[dict] = 
         "payload": payload or {},
     }
     db = _get_firestore()
-    if _USE_MEMORY or db is None:
+    if _USE_MEMORY or db is None or not project_id:
         _MEMORY.events.setdefault(project_id, []).append(evt)
     else:
         # Sync Firestore client — call directly (no await)

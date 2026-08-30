@@ -134,7 +134,7 @@ export function RenderQueueView() {
           {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-400" /> : allDone ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Film className="h-3.5 w-3.5 text-teal-400" />}
           Step 5 — Render Queue
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Rendering your film</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Rendering the production</h2>
         <p className="mt-1.5 text-sm text-zinc-400">
           The Director Agent calls Veo 3.1, Chirp 3, and Lyria 2 per shot, with the
           Film Bible injected as context. Each modality runs concurrently.

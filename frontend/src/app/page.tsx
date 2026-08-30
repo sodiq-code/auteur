@@ -24,6 +24,7 @@ import { AssemblyView } from "@/components/auteur/AssemblyView";
 import { ShareView } from "@/components/auteur/ShareView";
 import { HealthPanel } from "@/components/auteur/HealthPanel";
 import { ShotDetailDialog } from "@/components/auteur/ShotDetailDialog";
+import { KeyboardShortcutsHelp } from "@/components/auteur/KeyboardShortcutsHelp";
 
 const NAV_ITEMS: { view: StudioView; label: string; icon: typeof Film; step?: number }[] = [
   { view: "landing", label: "Home", icon: Home },
@@ -43,6 +44,7 @@ export default function Page() {
   const [health, setHealthState] = useState<HealthStatus | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [healthPanelOpen, setHealthPanelOpen] = useState(false);
+  const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
   const [detailShot, setDetailShot] = useState<{ id: number; label: string; scene: string; frame: string; scores: { face: number; age: number; beard: number; wardrobe: number; overall: number }; notes: string } | null>(null);
 
   useEffect(() => {
@@ -54,6 +56,7 @@ export default function Page() {
   // keyboard shortcuts
   useKeyboardShortcuts({
     onToggleHealth: () => setHealthPanelOpen((v) => !v),
+    onToggleShortcutsHelp: () => setShortcutsHelpOpen((v) => !v),
     onLoadDemo: () => {
       // load the canonical lighthouse-keeper demo into the store
       const demoRefs: Reference[] = [
@@ -70,7 +73,7 @@ export default function Page() {
         characters: [{ id: "c1", name: "Ewan MacAskill", age: 52, description: "A weathered, solitary Scottish lighthouse keeper.", voice_profile: "Gruff, sparse, Scottish brogue.", wardrobe: "Hand-waxed oilskin storm coat over a heavy-knit wool sweater.", reference_image_url: "/auteur/day1/character-reference.png", references: [demoRefs[2]] }],
         locations: [{ id: "l1", name: "Skerryvore Lighthouse", description: "A remote stone lighthouse battered by the North Sea.", era: "1892", references: [demoRefs[0]] }],
         wardrobes: [{ id: "w1", character_id: "c1", garment: "Oilskin storm coat", fabric: "Waxed cotton", color: "Dark oil-black" }],
-        voice_profiles: [{ id: "v1", character_id: "c1", voice_model: "gemini-2.5-flash-tts", voice_name: "Charon", description: "Weary, deep, Scottish brogue" }],
+        voice_profiles: [{ id: "v1", character_id: "c1", voice_model: "gemini-3.1-flash-tts-preview", voice_name: "Charon", description: "Weary, deep, Scottish brogue" }],
         score_motifs: [{ id: "m1", name: "The Keeper's Vigil", prompt: "a slow mournful solo fiddle, scottish air, melancholic, distant waves", instrument: "Solo fiddle", mood: "Melancholic, isolated" }],
         style_anchors: [{ id: "s1", color_grade: "Desaturated cold blues + warm amber lamp glow", aspect_ratio: "16:9", photographic_aesthetic: "Shallow depth of field, 50mm", mood: "Atmospheric, isolating" }],
         story_beats: [
@@ -133,9 +136,9 @@ export default function Page() {
                 window.dispatchEvent(e);
               }}
               className="hidden items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300 transition hover:bg-amber-500/20 md:flex"
-              title="Load canonical demo (press d)"
+              title="Load the sample production (press d)"
             >
-              <Zap className="h-3 w-3" /> demo
+              <Zap className="h-3 w-3" /> sample
             </button>
             {project && (
               <Badge variant="outline" className="hidden border-zinc-700 text-zinc-400 md:inline-flex">
@@ -150,6 +153,14 @@ export default function Page() {
             >
               <Github className="h-4 w-4" />
             </Link>
+            <button
+              onClick={() => setShortcutsHelpOpen(true)}
+              className="hidden h-8 items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-2.5 text-xs font-medium text-zinc-400 transition hover:text-zinc-200 sm:flex"
+              title="Keyboard shortcuts (⌘K)"
+            >
+              <span className="auteur-kbd">⌘</span>
+              <span className="auteur-kbd">K</span>
+            </button>
             <Link
               href="https://auteur-dev-jbkbgthudq-uc.a.run.app/docs"
               target="_blank"
@@ -245,16 +256,16 @@ export default function Page() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-3 text-[11px] text-zinc-600 sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
             <Film className="h-3 w-3 text-teal-400" />
-            <span>Auteur — the Film Bible Agent · Parallel Partner Track</span>
+            <span>Auteur · The Film Bible Agent</span>
           </div>
           <div className="flex items-center gap-3">
             {health && (
               <span className="font-mono text-zinc-700">
-                {Object.keys(health.model_status).length} models · backend v{health.version}
+                {Object.keys(health.model_status).length} models · {health.endpoints?.length ?? 0} endpoints
               </span>
             )}
             <Link href="https://agentic-cinema.devpost.com/" target="_blank" className="transition hover:text-zinc-400">
-              Agentic Cinema Hackathon
+              Agentic Cinema
             </Link>
           </div>
         </div>
@@ -262,6 +273,18 @@ export default function Page() {
 
       {/* Slide-over health panel (press ?) */}
       <HealthPanel open={healthPanelOpen} onClose={() => setHealthPanelOpen(false)} />
+
+      {/* Keyboard shortcuts command palette (press ⌘K) */}
+      <KeyboardShortcutsHelp
+        open={shortcutsHelpOpen}
+        onClose={() => setShortcutsHelpOpen(false)}
+        onToggleHealth={() => setHealthPanelOpen((v) => !v)}
+        onLoadDemo={() => {
+          // trigger the demo load (same as pressing 'd')
+          const e = new KeyboardEvent("keydown", { key: "d" });
+          window.dispatchEvent(e);
+        }}
+      />
 
       {/* Shot detail dialog (click a shot in the grid) */}
       <ShotDetailDialog shot={detailShot} open={!!detailShot} onOpenChange={(v) => !v && setDetailShot(null)} />

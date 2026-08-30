@@ -47,7 +47,7 @@ class ResearchAgent(Agent):
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.post(
                 "https://api.parallel.ai/v1/search",
-                headers={"Authorization": f"Bearer {os.environ['PARALLEL_API_KEY']}"},
+                headers={"x-api-key": os.environ["PARALLEL_API_KEY"]},
                 json={"query": query, "num": 10, "modality": modality}
             )
             resp.raise_for_status()
@@ -79,7 +79,8 @@ Only include results directly relevant to the query."""
 
 ### Auth
 
-- **Bearer token** in the `Authorization` header: `Bearer ${PARALLEL_API_KEY}`.
+- **API key** in the `x-api-key` header: `x-api-key: ${PARALLEL_API_KEY}`.
+  (The Parallel Search API uses `x-api-key`, not `Authorization: Bearer`.)
 - `PARALLEL_API_KEY` is provisioned in **Google Secret Manager** and
   injected into the Cloud Run service as an env var at deploy time
   (blueprint Section 27.4, Section 29.2).
@@ -90,7 +91,7 @@ Only include results directly relevant to the query."""
 
 ```json
 POST https://api.parallel.ai/v1/search
-Authorization: Bearer <PARALLEL_API_KEY>
+x-api-key: <PARALLEL_API_KEY>
 Content-Type: application/json
 
 {

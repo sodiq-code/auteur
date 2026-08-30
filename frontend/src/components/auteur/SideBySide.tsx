@@ -64,13 +64,13 @@ export function SideBySide({
       {/* the side-by-side grid: char ref + 4 shots */}
       <div className={`grid ${compact ? "grid-cols-5" : "grid-cols-2 sm:grid-cols-5"} gap-0.5`}>
         {/* character reference */}
-        <div className="group relative overflow-hidden border-b border-zinc-800 sm:border-b-0">
+        <div className="auteur-carousel-card group relative overflow-hidden border-b border-zinc-800 sm:border-b-0">
           <div className="relative aspect-video">
             <Image
               src={characterRef}
               alt="Character reference"
               fill
-              className="object-cover"
+              className="auteur-carousel-frame object-cover"
               sizes="200px"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-transparent" />
@@ -85,13 +85,13 @@ export function SideBySide({
 
         {/* 4 shot frames */}
         {shots.map((shot) => (
-          <div key={shot.id} className="group relative overflow-hidden">
+          <div key={shot.id} className="auteur-carousel-card group relative overflow-hidden">
             <div className="relative aspect-video">
               <Image
                 src={shot.frame}
                 alt={`Shot ${shot.id} — ${shot.label}`}
                 fill
-                className="object-cover transition duration-500 group-hover:scale-105"
+                className="auteur-carousel-frame object-cover"
                 sizes="200px"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-transparent" />

@@ -68,7 +68,7 @@ class WardrobeSpec(BaseModel):
 class VoiceProfileSpec(BaseModel):
     id: str = Field(default_factory=lambda: uuid4().hex)
     character_id: str
-    voice_model: str = "gemini-2.5-flash-tts"  # blueprint "Chirp 3"
+    voice_model: str = "gemini-3.1-flash-tts-preview"  # blueprint "Chirp 3"
     voice_name: str = "Charon"
     description: str = ""
 

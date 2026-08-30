@@ -30,8 +30,10 @@ async def check_shot(
     Returns: {drift_score, per_attribute_breakdown, recommendation, notes}.
     drift_score = 1 - overall_consistency (lower drift = better match).
     """
+    from .adk_registry import consistency_agent  # ADK integration point
+
     instruction = (
-        "You are Auteur's Consistency Check Agent (blueprint Section 22.3, Table 31). "
+        f"{consistency_agent.instruction}\n\n"
         "Image 1 is the character reference. Image 2 is a video frame from a generated "
         f"shot{f' ({scene_label})' if scene_label else ''}. "
         "Score how well the character in image 2 matches the reference, on these "
@@ -47,14 +49,24 @@ async def check_shot(
         f"Recommendation: accept if overall >= {1 - DRIFT_THRESHOLD:.2f}, else re-generate.\n"
     )
     text = await gemini.pro_generate(
-        instruction, response_mime_type="application/json", temperature=0.2,
+        instruction,
+        response_mime_type="application/json",
+        temperature=consistency_agent.generate_content_config.temperature or 0.2,
         images=[char_ref_png, shot_frame_png],
     )
     try:
         data = json.loads(text)
-    except json.JSONDecodeError:
-        data = {"_raw": text, "overall": 0.0, "recommendation": "accept",
+    except (json.JSONDecodeError, TypeError):
+        data = {"_raw": str(text)[:200], "overall": 0.0, "recommendation": "accept",
                 "notes": "consistency check skipped (JSON parse failed)"}
+
+    # Handle case where Gemini returns a list instead of a dict
+    if isinstance(data, list):
+        data = data[0] if data else {}
+
+    if not isinstance(data, dict):
+        data = {"overall": 0.0, "recommendation": "accept",
+                "notes": "consistency check returned non-dict response"}
 
     overall = float(data.get("overall", 0.0))
     data["drift_score"] = round(1.0 - overall, 3)  # drift = 1 - consistency

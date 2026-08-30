@@ -1,11 +1,12 @@
 """
 Auteur — Gemini LLM client (blueprint Section 25, the Director + Consistency agent).
 
-Model selection (see docs/validation-day-1-report.md):
-  - gemini-3.1-pro-preview (global region) — Director Agent reasoning + vision
-  - gemini-2.5-flash (us-central1) — Research synthesis (faster, cheaper)
+All reasoning uses gemini-3.1-pro-preview (global region) — the newest accessible
+Pro model for both text and vision. No Gemini 2.x models are used at runtime.
 
-All 3.x Gemini models are only accessible in the `global` region on this project.
+The "flash" path (formerly gemini-2.5-flash for Research synthesis) now also
+routes through gemini-3.1-pro-preview in the global region, keeping a single
+model across the entire agent stack.
 """
 from __future__ import annotations
 
@@ -17,11 +18,9 @@ from google import genai
 from google.genai import types
 
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "auteur-506523")
-PRO_REGION = "global"        # gemini-3.1-pro-preview
-FLASH_REGION = "us-central1"  # gemini-2.5-flash
+PRO_REGION = "global"        # gemini-3.1-pro-preview (text + vision)
 
 _PRO_CLIENT = None
-_FLASH_CLIENT = None
 
 
 def _pro_client():
@@ -31,20 +30,13 @@ def _pro_client():
     return _PRO_CLIENT
 
 
-def _flash_client():
-    global _FLASH_CLIENT
-    if _FLASH_CLIENT is None:
-        _FLASH_CLIENT = genai.Client(vertexai=True, project=PROJECT_ID, location=FLASH_REGION)
-    return _FLASH_CLIENT
-
-
 async def pro_generate(
     prompt: str,
     response_mime_type: str | None = None,
     temperature: float = 0.4,
     images: list[bytes] | None = None,
 ) -> str:
-    """Gemini 3.1 Pro (global) — Director Agent reasoning + vision (blueprint Table 31)."""
+    """Gemini 3.1 Pro (global) — Director Agent reasoning + vision."""
     cfg_kwargs: dict[str, Any] = {"temperature": temperature}
     if response_mime_type:
         cfg_kwargs["response_mime_type"] = response_mime_type
@@ -73,9 +65,11 @@ async def pro_generate_json(prompt: str, temperature: float = 0.4) -> dict[str, 
 
 
 async def flash_synthesize(prompt: str, temperature: float = 0.3) -> str:
-    """Gemini 2.5 Flash (us-central1) — Research synthesis (blueprint Table 34 row 2)."""
-    cfg = types.GenerateContentConfig(temperature=temperature)
-    resp = await _flash_client().aio.models.generate_content(
-        model="gemini-2.5-flash", contents=prompt, config=cfg,
-    )
-    return resp.text or ""
+    """Gemini 3.1 Pro (global) — Research synthesis.
+
+    Formerly used gemini-2.5-flash (us-central1) for cost/speed, but all 3.x
+    Gemini models are only accessible in the `global` region on this project.
+    Now routes through gemini-3.1-pro-preview to keep a single model across
+    the entire agent stack.
+    """
+    return await pro_generate(prompt, temperature=temperature)

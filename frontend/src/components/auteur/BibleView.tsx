@@ -25,6 +25,7 @@ const TABS = [
   { id: "score", label: "Score", icon: Music },
   { id: "style", label: "Style", icon: Palette },
   { id: "beats", label: "Beats", icon: ListOrdered },
+  { id: "references", label: "References", icon: ExternalLink },
 ] as const;
 
 export function BibleView() {
@@ -94,7 +95,7 @@ export function BibleView() {
           <div className="grid gap-4 sm:grid-cols-2">
             {bible.characters.map((c) => (
               <div key={c.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
-                {c.reference_image_url && (
+                {c.reference_image_url && !c.reference_image_url.startsWith("generated:") && (
                   <div className="relative mb-3 aspect-video overflow-hidden rounded-md border border-zinc-800">
                     <Image
                       src={c.reference_image_url}
@@ -183,83 +184,131 @@ export function BibleView() {
         </TabsContent>
 
         <TabsContent value="wardrobes" className="mt-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {bible.wardrobes.map((w) => {
-              const char = bible.characters.find((c) => c.id === w.character_id);
-              return (
-                <div key={w.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
-                  <h3 className="font-semibold text-zinc-100">{w.garment}</h3>
-                  <p className="mt-1 text-[11px] text-zinc-500">worn by {char?.name || "—"}</p>
-                  <dl className="mt-2 space-y-0.5 text-[11px]">
-                    {w.fabric && <div><dt className="inline text-zinc-500">Fabric: </dt><dd className="inline text-zinc-300">{w.fabric}</dd></div>}
-                    {w.color && <div><dt className="inline text-zinc-500">Color: </dt><dd className="inline text-zinc-300">{w.color}</dd></div>}
-                  </dl>
-                </div>
-              );
-            })}
-          </div>
+          {bible.wardrobes.length === 0 ? (
+            <EmptyTab label="No wardrobe entries" hint="Wardrobe details are derived from character data when the Bible is built." />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {bible.wardrobes.map((w) => {
+                const char = bible.characters.find((c) => c.id === w.character_id);
+                return (
+                  <div key={w.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
+                    <h3 className="font-semibold text-zinc-100">{w.garment}</h3>
+                    <p className="mt-1 text-[11px] text-zinc-500">worn by {char?.name || "—"}</p>
+                    <dl className="mt-2 space-y-0.5 text-[11px]">
+                      {w.fabric && <div><dt className="inline text-zinc-500">Fabric: </dt><dd className="inline text-zinc-300">{w.fabric}</dd></div>}
+                      {w.color && <div><dt className="inline text-zinc-500">Color: </dt><dd className="inline text-zinc-300">{w.color}</dd></div>}
+                    </dl>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="voice" className="mt-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {bible.voice_profiles.map((v) => {
-              const char = bible.characters.find((c) => c.id === v.character_id);
-              return (
-                <div key={v.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
-                  <h3 className="font-semibold text-zinc-100">{v.voice_name}</h3>
-                  <p className="mt-1 text-[11px] text-zinc-500">voice of {char?.name || "—"}</p>
-                  <dl className="mt-2 space-y-0.5 text-[11px]">
-                    <div><dt className="inline text-zinc-500">Model: </dt><dd className="inline font-mono text-teal-300">{v.voice_model}</dd></div>
-                    {v.description && <div><dt className="inline text-zinc-500">Tone: </dt><dd className="inline text-zinc-300">{v.description}</dd></div>}
-                  </dl>
-                </div>
-              );
-            })}
-          </div>
+          {bible.voice_profiles.length === 0 ? (
+            <EmptyTab label="No voice profiles" hint="Voice profiles are derived from character data when the Bible is built." />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {bible.voice_profiles.map((v) => {
+                const char = bible.characters.find((c) => c.id === v.character_id);
+                return (
+                  <div key={v.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
+                    <h3 className="font-semibold text-zinc-100">{v.voice_name}</h3>
+                    <p className="mt-1 text-[11px] text-zinc-500">voice of {char?.name || "—"}</p>
+                    <dl className="mt-2 space-y-0.5 text-[11px]">
+                      <div><dt className="inline text-zinc-500">Model: </dt><dd className="inline font-mono text-teal-300">{v.voice_model}</dd></div>
+                      {v.description && <div><dt className="inline text-zinc-500">Tone: </dt><dd className="inline text-zinc-300">{v.description}</dd></div>}
+                    </dl>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="score" className="mt-4">
-          <div className="grid gap-3">
-            {bible.score_motifs.map((m) => (
-              <div key={m.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
-                <h3 className="font-semibold text-zinc-100">{m.name}</h3>
-                <p className="mt-1 text-[11px] text-zinc-500">Lyria 2 prompt</p>
-                <p className="mt-1 rounded bg-zinc-950/50 px-2 py-1.5 font-mono text-[11px] text-amber-200/80">{m.prompt}</p>
-                <dl className="mt-2 space-y-0.5 text-[11px]">
-                  {m.instrument && <div><dt className="inline text-zinc-500">Instrument: </dt><dd className="inline text-zinc-300">{m.instrument}</dd></div>}
-                  {m.mood && <div><dt className="inline text-zinc-500">Mood: </dt><dd className="inline text-zinc-300">{m.mood}</dd></div>}
-                </dl>
-              </div>
-            ))}
-          </div>
+          {bible.score_motifs.length === 0 ? (
+            <EmptyTab label="No score motifs" hint="Score motifs are derived from the style anchor mood when the Bible is built." />
+          ) : (
+            <div className="grid gap-3">
+              {bible.score_motifs.map((m) => (
+                <div key={m.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
+                  <h3 className="font-semibold text-zinc-100">{m.name}</h3>
+                  <p className="mt-1 text-[11px] text-zinc-500">Lyria 2 prompt</p>
+                  <p className="mt-1 rounded bg-zinc-950/50 px-2 py-1.5 font-mono text-[11px] text-amber-200/80">{m.prompt}</p>
+                  <dl className="mt-2 space-y-0.5 text-[11px]">
+                    {m.instrument && <div><dt className="inline text-zinc-500">Instrument: </dt><dd className="inline text-zinc-300">{m.instrument}</dd></div>}
+                    {m.mood && <div><dt className="inline text-zinc-500">Mood: </dt><dd className="inline text-zinc-300">{m.mood}</dd></div>}
+                  </dl>
+                </div>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="style" className="mt-4">
-          <div className="grid gap-3">
-            {bible.style_anchors.map((s) => (
-              <div key={s.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
-                <dl className="space-y-2 text-xs">
-                  <div><dt className="text-zinc-500">Color grade</dt><dd className="text-zinc-200">{s.color_grade}</dd></div>
-                  <div><dt className="text-zinc-500">Aspect ratio</dt><dd className="font-mono text-teal-300">{s.aspect_ratio}</dd></div>
-                  {s.photographic_aesthetic && <div><dt className="text-zinc-500">Aesthetic</dt><dd className="text-zinc-300">{s.photographic_aesthetic}</dd></div>}
-                  {s.mood && <div><dt className="text-zinc-500">Mood</dt><dd className="text-zinc-300">{s.mood}</dd></div>}
-                </dl>
-              </div>
-            ))}
-          </div>
+          {bible.style_anchors.length === 0 ? (
+            <EmptyTab label="No style anchors" hint="Style anchors define the visual look (color grade, aspect ratio, mood)." />
+          ) : (
+            <div className="grid gap-3">
+              {bible.style_anchors.map((s) => (
+                <div key={s.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
+                  <dl className="space-y-2 text-xs">
+                    <div><dt className="text-zinc-500">Color grade</dt><dd className="text-zinc-200">{s.color_grade}</dd></div>
+                    <div><dt className="text-zinc-500">Aspect ratio</dt><dd className="font-mono text-teal-300">{s.aspect_ratio}</dd></div>
+                    {s.photographic_aesthetic && <div><dt className="text-zinc-500">Aesthetic</dt><dd className="text-zinc-300">{s.photographic_aesthetic}</dd></div>}
+                    {s.mood && <div><dt className="text-zinc-500">Mood</dt><dd className="text-zinc-300">{s.mood}</dd></div>}
+                  </dl>
+                </div>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="beats" className="mt-4">
-          <ol className="space-y-2">
-            {bible.story_beats.map((b) => (
-              <li key={b.id} className="flex gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-teal-500/15 font-mono text-xs font-bold text-teal-300">
-                  {b.order}
-                </span>
-                <p className="text-sm text-zinc-300">{b.description}</p>
-              </li>
-            ))}
-          </ol>
+          {bible.story_beats.length === 0 ? (
+            <EmptyTab label="No story beats" hint="Story beats define the 4-shot narrative sequence." />
+          ) : (
+            <ol className="space-y-2">
+              {bible.story_beats.map((b) => (
+                <li key={b.id} className="flex gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-teal-500/15 font-mono text-xs font-bold text-teal-300">
+                    {b.order}
+                  </span>
+                  <p className="text-sm text-zinc-300">{b.description}</p>
+                </li>
+              ))}
+            </ol>
+          )}
+        </TabsContent>
+
+        <TabsContent value="references" className="mt-4">
+          {bible.research_references.length === 0 ? (
+            <EmptyTab label="No research references" hint="References are gathered by the Research Agent via Parallel Search." />
+          ) : (
+            <div className="space-y-2">
+              <div className="mb-2 text-[11px] text-zinc-500">
+                {bible.research_references.length} references from Parallel Search — every creative decision can be traced to a real source.
+              </div>
+              {bible.research_references.map((r, i) => (
+                <a
+                  key={r.id || i}
+                  href={r.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block rounded-lg border border-zinc-800 bg-zinc-900/40 p-3 transition hover:border-zinc-700 hover:bg-zinc-900/60"
+                >
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-200">
+                    <ExternalLink className="h-3 w-3 shrink-0 text-teal-400" />
+                    <span className="truncate">{r.title}</span>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-[11px] text-zinc-500">{r.snippet}</p>
+                  <div className="mt-1 truncate font-mono text-[10px] text-teal-500/70">{r.url}</div>
+                </a>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -297,6 +346,15 @@ function RefList({ refs }: { refs: Reference[] }) {
           </a>
         ))}
       </div>
+    </div>
+  );
+}
+
+function EmptyTab({ label, hint }: { label: string; hint: string }) {
+  return (
+    <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/20 px-4 py-8 text-center">
+      <div className="text-sm font-medium text-zinc-400">{label}</div>
+      <div className="mt-1 text-[11px] text-zinc-600">{hint}</div>
     </div>
   );
 }

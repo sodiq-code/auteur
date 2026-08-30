@@ -4,6 +4,7 @@
  * Esc: go back to landing (or close any open modal)
  * ?: open the health panel
  * d: load the canonical demo (lighthouse keeper)
+ * ⌘K / Ctrl+K: open the keyboard shortcuts help (command palette)
  */
 "use client";
 
@@ -26,11 +27,19 @@ const VIEW_KEYS: Record<string, StudioView> = {
 export function useKeyboardShortcuts(opts: {
   onToggleHealth: () => void;
   onLoadDemo: () => void;
+  onToggleShortcutsHelp?: () => void;
 }) {
   const { view, setView, project, reset } = useStudio();
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
+      // ⌘K / Ctrl+K — open the shortcuts help (command palette)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        opts.onToggleShortcutsHelp?.();
+        return;
+      }
+
       // don't intercept if typing in an input/textarea
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable) return;

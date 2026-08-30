@@ -1,9 +1,9 @@
 """
 Auteur — voice / TTS client (blueprint "Chirp 3").
 
-Model: gemini-2.5-flash-tts (Chirp 3 itself 404s on the project; the SDK surface
-is gemini-2.5-flash-tts via generate_content with response_modalities=['AUDIO']
-+ speech_config with a prebuilt voice_name). us-central1 region.
+Model: gemini-3.1-flash-tts-preview (the Gemini 3.1 TTS model via
+generate_content with response_modalities=['AUDIO'] + speech_config with a
+prebuilt voice_name). us-central1 region.
 
 Returns raw PCM (audio/L16;rate=24000, mono, 16-bit) — wrapped to WAV by the caller.
 """
@@ -17,7 +17,7 @@ from google.genai import types
 
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "auteur-506523")
 TTS_REGION = "us-central1"
-TTS_MODEL = "gemini-2.5-flash-tts"
+TTS_MODEL = "gemini-3.1-flash-tts-preview"
 
 _CLIENT = None
 

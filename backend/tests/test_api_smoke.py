@@ -85,9 +85,9 @@ def main() -> int:
         s, gen = call("POST", f"/api/projects/{project_id}/shots/nonexistent/generate", {"bible_version": 1})
         results.append(("POST /generate (stub)", s, "404 expected" if s == 404 else f"FAIL: {gen}"))
 
-        # 9. POST /api/projects/{id}/assemble (stub)
+        # 9. POST /api/projects/{id}/assemble (no shots generated -> 404, expected)
         s, asm = call("POST", f"/api/projects/{project_id}/assemble")
-        results.append(("POST /assemble (stub)", s, "accepted" if s == 200 else f"FAIL: {asm}"))
+        results.append(("POST /assemble (no shots)", s, "404 expected" if s == 404 else f"FAIL: {asm}"))
 
         # 10. POST /api/projects/{id}/share
         s, sh_link = call("POST", f"/api/projects/{project_id}/share")
