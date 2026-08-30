@@ -1,0 +1,30 @@
+{
+  "project_id": "d13450e85a7b41ac8321786bffe1eaf8",
+  "shot_id": "6460d2bfa4cd4ce2a83522330386e2fb",
+  "logline": "A noir detective in 1920s Shanghai hunts a ghost from his past.",
+  "before": {
+    "overall": 0.85,
+    "drift_score": 0.15,
+    "recommendation": "accept",
+    "per_attribute": {
+      "face_identity": 0.7,
+      "age_appearance": 0.7,
+      "beard_facial_hair": 0.7,
+      "wardrobe": 0.95
+    }
+  },
+  "after": {
+    "overall": 0.9,
+    "drift_score": 0.1,
+    "recommendation": "accept",
+    "per_attribute": {
+      "face_identity": 0.8,
+      "age_appearance": 0.9,
+      "beard_facial_hair": 0.9,
+      "wardrobe": 0.95
+    }
+  },
+  "threshold": 0.25,
+  "captured_at": "2026-08-30T02:00:58Z",
+  "note": "Real before/after from the deployed backend. The regenerate endpoint re-runs the generation pipeline (Veo + Chirp + Lyria with the Bible injected) and then re-runs the Consistency Check Agent, so the before/after scores are from two independent Veo 3.1 generations of the same shot with the same Bible context."
+}

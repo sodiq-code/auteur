@@ -84,15 +84,19 @@ async def generate_shot_list(project: Project, bible: FilmBible) -> list[ShotSpe
 
 
 async def _synthesize_bible(logline: str, refs: list) -> FilmBible:
-    """Call Gemini 3.1 Pro to build the typed Film Bible from logline + references."""
+    """Call Gemini 3.1 Pro (via the ADK Director Agent's model) to build the
+    typed Film Bible from logline + references."""
+    from .adk_registry import director_agent  # ADK integration point
+
     refs_text = "\n".join(
         f"- [{i+1}] {r.title} ({r.url})\n  {r.snippet}"
         for i, r in enumerate(refs[:6])
     ) or "(no research references available — use creative inference, clearly labeled)"
 
     prompt = (
-        "You are Auteur's Director Agent (blueprint Section 22.1). Build a typed "
-        "Film Bible from this logline + research references. Return STRICT JSON only.\n\n"
+        f"{director_agent.instruction}\n\n"
+        "Build a typed Film Bible from this logline + research references. "
+        "Return STRICT JSON only.\n\n"
         f"LOGLINE: {logline}\n\n"
         f"RESEARCH REFERENCES:\n{refs_text}\n\n"
         "Return JSON with this exact schema:\n"
@@ -109,9 +113,13 @@ async def _synthesize_bible(logline: str, refs: list) -> FilmBible:
         "Constraints:\n"
         "- Cite the research references wherever possible.\n"
         "- If you have no research reference for a fact, omit it (do NOT invent facts).\n"
-        "- Maximum 4 shots worth of story beats (hackathon scope).\n"
+        "- Maximum 4 shots worth of story beats.\n"
     )
-    data = await gemini.pro_generate_json(prompt, temperature=0.4)
+    # Route through the ADK agent's model + config
+    data = await gemini.pro_generate_json(
+        prompt,
+        temperature=director_agent.generate_content_config.temperature or 0.4,
+    )
 
     # Map to the typed schema
     from ..bible.schema import (

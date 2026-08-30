@@ -67,16 +67,49 @@ async def generate_shot(project_id: str, shot_id: str, req: GenerateRequest) -> 
 
 class RegenerateRequest(BaseModel):
     reason: str = ""
+    bible_version: int = 1
 
 
 @router.post("/{shot_id}/regenerate")
 async def regenerate_shot(project_id: str, shot_id: str, req: RegenerateRequest) -> dict[str, Any]:
-    """Re-generate a shot (blueprint Table 38 row 7)."""
-    generation_id = uuid.uuid4().hex
-    await store.log_event(project_id, "regeneration_prompted", {
-        "shotId": shot_id, "generationId": generation_id, "reason": req.reason,
+    """Re-generate a shot (blueprint Table 38 row 7).
+
+    Re-runs the generation pipeline (Veo + Chirp + Lyria) for the shot with the
+    Bible injected as context, then re-runs the Consistency Check Agent so the
+    caller can compare the before/after drift scores. This closes the agentic
+    loop: drift > threshold -> regenerate -> re-check.
+    """
+    from ..pipelines import generate as generate_pipeline, check as check_pipeline
+
+    project = await store.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="project not found")
+    shots = await store.get_shots(project_id)
+    shot = next((s for s in shots if s.id == shot_id), None)
+    if not shot:
+        raise HTTPException(status_code=404, detail="shot not found")
+
+    bible = await store.get_bible(project_id, version=req.bible_version) or await store.get_bible(project_id)
+    if not bible:
+        raise HTTPException(status_code=404, detail="no bible found — call POST /build-bible first")
+
+    await store.log_event(project_id, "regeneration_started", {
+        "shotId": shot_id, "reason": req.reason, "bible_version": bible.version,
     })
-    return {"generation_id": generation_id, "shot_id": shot_id, "status": "accepted"}
+
+    # Re-run the generation pipeline (overwrites the previous generation in the store)
+    gen_result = await generate_pipeline.generate_shot(project_id, shot, bible)
+
+    # Re-run the consistency check so the caller can compare before/after
+    check_result = await check_pipeline.check_shot(project_id, shot_id)
+
+    return {
+        "shot_id": shot_id,
+        "status": "regenerated",
+        "bible_version": bible.version,
+        "generation": gen_result,
+        "consistency": check_result,
+    }
 
 
 @router.get("/{shot_id}/consistency")

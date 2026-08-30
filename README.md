@@ -36,6 +36,8 @@ One character reference image is generated from the logline. The Director Agent 
 
 One Film Bible. Four generations. One coherent character. Full evidence in [`docs/validation-day-1-report.md`](./docs/validation-day-1-report.md).
 
+> **Methodology:** consistency scores are model-based evaluation scores produced by the Consistency Check Agent (`gemini-3.1-pro-preview` vision) using a fixed rubric across five dimensions (face identity, age appearance, beard/facial hair, wardrobe, overall). They are internal evaluation metrics, not a claim of objective perceptual similarity. Drift = 1.0 − overall. Accept threshold: overall ≥ 0.75.
+
 ---
 
 ## The 30-second explanation
@@ -123,6 +125,25 @@ Three properties make it work:
 
 The loop is what makes this an agentic system rather than an LLM wrapper: the Consistency Check Agent's drift score feeds back into re-generation decisions, and drift is tracked across re-generations per shot within a project.
 
+### A real before/after
+
+Captured on the deployed backend — two independent Veo 3.1 generations of the same shot with the same Bible context, scored by the Consistency Check Agent:
+
+```
+SHOT 1 — FIRST GENERATION
+  face_identity: 0.70   age_appearance: 0.70   beard: 0.70   wardrobe: 0.95
+  overall: 0.85   drift: 0.15   verdict: ACCEPT
+
+        │  POST /regenerate  (re-runs generate + check)
+
+        ▼
+SHOT 1 — REGENERATION
+  face_identity: 0.80   age_appearance: 0.90   beard: 0.90   wardrobe: 0.95
+  overall: 0.90   drift: 0.10   verdict: ACCEPT
+```
+
+Face identity improved 0.70 → 0.80, age 0.70 → 0.90, beard 0.70 → 0.90. The regenerate endpoint (`POST /shots/{id}/regenerate`) re-runs the full generation pipeline with the Bible injected as context, then re-runs the Consistency Check Agent so the caller can compare. Full evidence in [`docs/regeneration-evidence.json`](./docs/regeneration-evidence.json).
+
 ## Why Parallel
 
 Generative filmmaking has two memory problems. Auteur solves both.
@@ -163,9 +184,10 @@ The claims above are demonstrated, not asserted.
 | Bible version attribution | Every shot cites its bible version — `GET /api/projects/{id}/shots` |
 | Parallel runtime research | Live Research panel streams queries + results — verified in the deployed UI |
 | Drift detection | Per-shot drift scores (face/age/beard/wardrobe/overall) — `POST /check-all` |
-| Automatic regeneration | Drift > 0.25 triggers re-generation with stricter Bible injection — `POST /regenerate` |
+| Closed-loop regeneration | Re-generation improved overall 0.85 → 0.90 (drift 0.15 → 0.10) — [`docs/regeneration-evidence.json`](./docs/regeneration-evidence.json) |
 | Voice + score muxing | Chirp voiceover + Lyria score mixed per shot, mean volume **-23.6 dB** (audible) — `backend/tests/test_assembly_audio.py` |
 | Final MP4 assembly | ffmpeg concat + AAC audio mux, `has_audio=True` — `GET /api/projects/{id}/film` |
+| ADK agents | Three agents on Google Agent Development Kit — `backend/agents/adk_registry.py` |
 | Deployed end-to-end | Full pipeline on Cloud Run — `backend/tests/e2e_deployed_audio.py` (exit 0) |
 | Graceful degradation | Pipeline runs without PARALLEL_API_KEY — `backend/tests/test_fallback_no_parallel_key.py` (exit 0) |
 | Smoke test | 12/12 endpoints OK — `backend/tests/test_api_smoke.py` |
@@ -213,7 +235,7 @@ The Director selects among 6 external tools (Parallel Search, Veo, Chirp, Lyria,
 
 Ten views map to the filmmaking workflow: **Logline → Research → Bible → Shots → Render → Grid → Drift → Assembly → Share**. A filmmaker recognizes the shape immediately — script pane, bible pane, shot grid, render queue, consistency dashboard. The Bible is visible and editable at every step: the user can see what the agent remembers and change it.
 
-The signature moment is the **SideBySide** component: one character reference + four generated shot frames, each with its consistency score, proving the character was held together across four different scenes. It appears on the landing, grid, and share views.
+The signature moment is the **SideBySide** component: one character reference + four generated shot frames, each with its consistency score, demonstrating the character was held together across four different scenes. It appears on the landing, grid, and share views.
 
 A command palette (⌘K) navigates the workflow with fuzzy-searchable actions. Every view has loading, empty, and error states with retry.
 
