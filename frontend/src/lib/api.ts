@@ -175,15 +175,77 @@ export async function generateShot(
   });
 }
 
+// --------------------------------------------------------------------------- //
+// Regeneration (the closed loop)
+// --------------------------------------------------------------------------- //
+
+export interface RegenerationResponse {
+  shot_id: string;
+  status: string;
+  bible_version: number;
+  drift_correction_applied: boolean;
+  prior_drift: { overall: number | null; drift_score: number | null } | null;
+  generation: {
+    shot_id: string;
+    order: number;
+    status: string;
+    modalities: Record<string, { status: string; [k: string]: unknown }>;
+    elapsed_sec: number;
+  };
+  consistency: {
+    shot_id: string;
+    status: string;
+    overall?: number | null;
+    drift_score?: number | null;
+    face_identity?: number | null;
+    age_appearance?: number | null;
+    beard_facial_hair?: number | null;
+    wardrobe?: number | null;
+    recommendation?: string | null;
+    notes?: string;
+  };
+}
+
 export async function regenerateShot(
   projectId: string,
   shotId: string,
-  reason: string,
-): Promise<{ generation_id: string; status: string }> {
-  return apiFetch(`/api/projects/${projectId}/shots/${shotId}/regenerate`, {
-    method: "POST",
-    body: JSON.stringify({ reason }),
-  });
+  reason: string = "",
+  bibleVersion: number = 1,
+  useDriftCorrection: boolean = true,
+): Promise<RegenerationResponse> {
+  return apiFetch<RegenerationResponse>(
+    `/api/projects/${projectId}/shots/${shotId}/regenerate`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        reason,
+        bible_version: bibleVersion,
+        use_drift_correction: useDriftCorrection,
+      }),
+    },
+  );
+}
+
+export interface AutoRegenerateResponse {
+  project_id: string;
+  status: string;
+  threshold: number;
+  shots_checked: number;
+  shots_regenerated: number;
+  regenerations: Array<{
+    shot_id: string;
+    order: number;
+    before: { overall: number | null; drift_score: number | null; recommendation: string | null };
+    after: { overall: number | null; drift_score: number | null; recommendation: string | null };
+    drift_correction_applied: boolean;
+  }>;
+}
+
+export async function autoRegenerate(projectId: string): Promise<AutoRegenerateResponse> {
+  return apiFetch<AutoRegenerateResponse>(
+    `/api/projects/${projectId}/shots/auto-regenerate`,
+    { method: "POST" },
+  );
 }
 
 export async function getConsistency(
