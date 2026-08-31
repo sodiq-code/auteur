@@ -112,9 +112,11 @@ async def research_with_tools(project_id: str, logline: str) -> list[Reference]:
             if resp.candidates and resp.candidates[0].content:
                 contents.append(resp.candidates[0].content)
 
-            # Check for function calls
+            # Check for function calls — Gemini may return MULTIPLE calls in one response
             has_function_call = False
             if resp.candidates and resp.candidates[0].content:
+                # Collect ALL function calls + their responses
+                func_response_parts = []
                 for part in resp.candidates[0].content.parts:
                     fc = getattr(part, "function_call", None)
                     if fc and fc.name == "parallel_search":
@@ -140,7 +142,7 @@ async def research_with_tools(project_id: str, logline: str) -> list[Reference]:
                             refs = parallel_search.parse_references(raw)
                             all_refs.extend(refs)
 
-                            result_str = json.dumps(refs[:5])  # limit to 5 per search
+                            result_str = json.dumps(refs[:5])
 
                             await store.log_event(project_id, "agent_tool_result", {
                                 "tool": "parallel_search",
@@ -151,16 +153,21 @@ async def research_with_tools(project_id: str, logline: str) -> list[Reference]:
                         except Exception as e:
                             result_str = json.dumps({"error": str(e)[:200]})
 
-                        # Feed the function response back to Gemini
-                        func_response = types.Part(
-                            function_response=types.FunctionResponse(
-                                name="parallel_search",
-                                response={"results": result_str},
+                        # Create function response for this specific call
+                        func_response_parts.append(
+                            types.Part(
+                                function_response=types.FunctionResponse(
+                                    name="parallel_search",
+                                    response={"results": result_str},
+                                )
                             )
                         )
-                        contents.append(
-                            types.Content(role="user", parts=[func_response])
-                        )
+
+                # Feed ALL function responses back to Gemini in a single message
+                if func_response_parts:
+                    contents.append(
+                        types.Content(role="user", parts=func_response_parts)
+                    )
 
             if not has_function_call:
                 # No more tool calls — the agent is done researching
