@@ -72,7 +72,7 @@ export function ShotGridView({ onShotClick }: { onShotClick?: (shot: { id: numbe
                   id: shot.order,
                   label: `Shot ${shot.order}`,
                   scene: shot.description.slice(0, 60),
-                  frame: `${API_BASE}/api/projects/${project.id}/shots/${shot.id}/video`,
+                  frame: videoUrl,
                   score: 0.9,
                   notes: shot.description,
                 })}
@@ -87,6 +87,7 @@ export function ShotGridView({ onShotClick }: { onShotClick?: (shot: { id: numbe
                       className="h-full w-full object-cover"
                       muted
                       loop
+                      playsInline
                       onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
                       onMouseLeave={(e) => (e.target as HTMLVideoElement).pause()}
                     />
