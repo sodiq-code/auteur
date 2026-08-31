@@ -84,7 +84,7 @@ export function ShotListView() {
 
       <div className="auteur-rise mt-6 flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3" style={{ animationDelay: "0.1s" }}>
         <span className="text-xs text-zinc-400">
-          {shots.length} shots · Bible v{bible.version} · max 4 (hackathon scope)
+          {shots.length} shots · Bible v{bible.version} · 4-shot short-film format
         </span>
         <button
           onClick={() => setView("render")}

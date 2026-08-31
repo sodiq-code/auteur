@@ -2,22 +2,21 @@
 Auteur — Research Agent (blueprint Section 22.2, Table 30).
 
 Grounds creative decisions in real-world references via the Parallel Search API
-(the partner track — REQUIRED at runtime per Rules §7B).
+(the partner integration, called at runtime).
 
 Role: takes a logline + a research objective, calls Parallel Search, caches the
-results (24h TTL), synthesizes them into typed References via Gemini Flash,
-returns them to the Director Agent.
+results (24h TTL), synthesizes them into typed References via Gemini, returns
+them to the Director Agent.
 
-The UI Research panel streams every Parallel Search query + result in real time
-so judges can see the partner API being called live (the #1 anti-anti-pattern
-mitigation, blueprint Section 26.3 / P670).
+The UI Research panel streams every Parallel Search query + result in real time.
 """
 from __future__ import annotations
 
 import json
 from typing import Any
 
-from ..integrations import parallel_search, gemini
+from .adk_registry import research_agent  # ADK integration point
+from ..integrations import parallel_search
 from ..bible import store
 from ..bible.schema import Reference
 

@@ -5,7 +5,7 @@ Extracts a representative frame from each generated Veo clip (via ffmpeg),
 runs the Consistency Check Agent (Gemini 3.1 Pro vision) to compare it to the
 character reference image, and produces a drift score per shot.
 
-Definition of done (blueprint P861): each shot has a drift score; re-generate
+Each shot has a drift score; re-generate
 button produces a new generation with stricter context.
 """
 from __future__ import annotations

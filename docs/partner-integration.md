@@ -1,19 +1,19 @@
 # Auteur — Partner Integration (Parallel Search API)
 
-> Source: blueprint Section 26.3 (Partner Integration — Parallel Search
+> Parallel Search integration notes.
 > API), Table 37 (External API matrix), Table 40 Row 1 (failure handling),
 > Section 5.3 (anti-anti-pattern mitigation). This is the most important
 > external integration: per Rules §7B, Parallel Search **MUST** be called
 > at runtime, and the call site **must be visible to judges testing the
 > deployed URL**.
 
-## Why this integration exists (blueprint Section 21.2)
+## Why this integration exists 
 
 The Research Agent grounds creative decisions in real-world references via
 the Parallel Search API. Every character, location, wardrobe, voice, score
 motif, and style anchor in the Film Bible carries a `references[]` list of
 `Reference` objects — each with a `url`, `title`, `snippet`, and `modality`
-returned by Parallel. This is what makes the Bible *citable* (blueprint
+returned by Parallel. This is what makes the Bible *citable* (
 Section 23.3): every creative decision traces back to a real URL, not a
 hallucination.
 
@@ -21,11 +21,11 @@ Without this integration, Auteur would be a fluent liar — generating
 plausible-sounding but ungrounded period details. Parallel is the
 ground-truth layer.
 
-## The integration (blueprint Section 26.3, P668)
+## The integration 
 
 Implemented in `backend/agents/research.py` (or `integrations/parallel_search.py`,
-per blueprint Section 31.1). The class below is reproduced verbatim from
-blueprint P668-P658.
+per Section 31.1). The class below is reproduced verbatim from
+P668-P658.
 
 ```python
 # agents/research_agent.py
@@ -43,11 +43,11 @@ class ResearchAgent(Agent):
         if cached:
             return cached
 
-        # 2. Call Parallel Search API at runtime (REQUIRED by rules §7B)
+        # 2. Call Parallel Search API at runtime (required at runtime)
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.post(
                 "https://api.parallel.ai/v1/search",
-                headers={"Authorization": f"Bearer {os.environ['PARALLEL_API_KEY']}"},
+                headers={"x-api-key": os.environ["PARALLEL_API_KEY"]},
                 json={"query": query, "num": 10, "modality": modality}
             )
             resp.raise_for_status()
@@ -79,18 +79,19 @@ Only include results directly relevant to the query."""
 
 ### Auth
 
-- **Bearer token** in the `Authorization` header: `Bearer ${PARALLEL_API_KEY}`.
+- **API key** in the `x-api-key` header: `x-api-key: ${PARALLEL_API_KEY}`.
+  (The Parallel Search API uses `x-api-key`, not `Authorization: Bearer`.)
 - `PARALLEL_API_KEY` is provisioned in **Google Secret Manager** and
   injected into the Cloud Run service as an env var at deploy time
-  (blueprint Section 27.4, Section 29.2).
+  .
 - Server-side only. No client-side secrets — the frontend talks only to
-  our FastAPI service (blueprint Section 27.4, P701).
+  our FastAPI service .
 
 ### Request shape
 
 ```json
 POST https://api.parallel.ai/v1/search
-Authorization: Bearer <PARALLEL_API_KEY>
+x-api-key: <PARALLEL_API_KEY>
 Content-Type: application/json
 
 {
@@ -103,7 +104,7 @@ Content-Type: application/json
 `modality` is one of `"visual"`, `"factual"`, `"audio"`, `"location"` —
 matching the `Reference.modality` enum in `docs/bible-schema.md`. The
 Research Agent formulates both the query and the modality based on the
-Director's request (blueprint Table 30, Row 3).
+Director's request .
 
 ### Response shape
 
@@ -121,12 +122,12 @@ a clean `List[Reference]` (filtering out irrelevant hits, normalizing the
 schema). The synthesized list is what gets cached and what gets attached
 to a Bible entry's `references[]` field.
 
-## Caching (blueprint Section 23.1, L4; Section 24.4)
+## Caching 
 
 | Aspect | Value |
 |---|---|
 | Cache store | Firestore `search_cache/{projectId}/{queryHash}` (layer L4) |
-| TTL | **24 hours** (blueprint Section 24.4, P636) |
+| TTL | **24 hours**  |
 | Read pattern | Per Research Agent call — `_cache_get(query)` before any network call |
 | Write pattern | On cache miss — `_cache_set(query, synthesized)` after a successful Parallel response |
 | Eviction | TTL refreshes on next query; entries are per-project, so a popular query is re-cached per project |
@@ -134,7 +135,7 @@ to a Bible entry's `references[]` field.
 Caching serves two purposes:
 
 1. **Cost.** Per-call Parallel pricing (TBD; estimated $1–5/month at hackathon
-   scale, blueprint Table 42, Row 7). Caching avoids re-searching the same
+   scale, Table 42, Row 7). Caching avoids re-searching the same
    query when the Director loops back to the same modality.
 2. **Resilience.** If Parallel is down, the cached results are the first
    fallback (see Failure Handling below).
@@ -147,18 +148,18 @@ synthesizes them through `gemini-2.5-flash` with structured JSON output
 objects that match the `bible/schema.py` Pydantic model. This is what
 guarantees the Bible's `references[]` field is always well-typed.
 
-Why Gemini Flash and not Pro? Blueprint Table 30, Row 2: "Faster, cheaper,
-sufficient for query formulation + result synthesis." Blueprint Table 34,
+Why Gemini Flash and not Pro? Table 30, Row 2: "Faster, cheaper,
+sufficient for query formulation + result synthesis." Table 34,
 Row 2: Flash is the right model for search-synthesis; Pro would be overkill.
 
-## Visibility — the #1 anti-anti-pattern mitigation (blueprint P670)
+## Visibility — the #1 anti-anti-pattern mitigation 
 
 > "The UI has a 'Research' panel that shows, in real-time, every Parallel
 > Search query and result. A judge testing the deployed URL can see the
 > partner API being called live. This is the #1 anti-anti-pattern
-> mitigation (Section 5.3)." — blueprint P670.
+> mitigation (Section 5.3)." — P670.
 
-The Research Panel (`frontend/src/components/ResearchPanel.tsx`, blueprint
+The Research Panel (`frontend/src/components/ResearchPanel.tsx`
 Section 30.2) renders:
 
 - Every query as it is sent (e.g., `▶ Searching: "1892 lighthouse keeper
@@ -175,7 +176,7 @@ generation endpoint streams a `research_started` / `research_completed`
 SSE event** so the Research Panel updates without polling (see
 `docs/api-contract.md` Row 6).
 
-## Failure handling (blueprint Table 40, Row 1)
+## Failure handling 
 
 | Failure | Detection | Fallback | User-visible impact |
 |---|---|---|---|
@@ -188,7 +189,7 @@ hard error.** It degrades gracefully:
    timestamp shown in the UI).
 2. If no cache exists, the Research Agent returns an empty list and the
    Director proceeds with **clearly-labeled "creative inference"** —
-   never asserted as fact (blueprint Section 25.4, P659). The Bible entry
+   never asserted as fact . The Bible entry
    carries a `references: []` field, and the UI shows a "no grounding
    found" badge on that entry.
 3. The event log records `research_failed (query, error)` for audit.
@@ -196,38 +197,38 @@ hard error.** It degrades gracefully:
 Additional resilience layers:
 
 - **Retry with exponential backoff:** max 5 retries on 429 / 5xx
-  (blueprint Table 37, Row 1).
+  .
 - **Per-query timeout:** 10 seconds (the `httpx.AsyncClient(timeout=10.0)`
   in the source above). Long enough for Parallel to respond; short enough
   that the live demo doesn't stall.
 - **Health probe:** `/api/health` returns `partner_status: "ok"` if a test
   query completes within 10s; `"degraded"` if returning cached results
-  (see `docs/api-contract.md` Row 14). The demo-day runbook checks this
-  at 00:05 (blueprint Section 28.4).
+  (see `docs/api-contract.md` Row 14). The operations runbook checks this
+  at 00:05 .
 
 ## Quotas and rate limits
 
 - **Parallel Search API:** per-call pricing TBD; validate in first 48 hours
-  of integration (blueprint Table 37, Row 1). Cache (24h TTL) is the
+  of integration . Cache (24h TTL) is the
   primary rate-limit mitigation.
 - **Vertex AI (for the Gemini Flash synthesis step):** standard Vertex AI
-  quota per project; retries with backoff (blueprint Table 37, Row 6).
+  quota per project; retries with backoff .
 
-## Cost (blueprint Table 36, Row 1; Table 42, Row 7)
+## Cost 
 
 - Per `logline → research complete`: ~5 Parallel queries × ~$0.001 each =
-  ~$0.01 + Gemini Flash synthesis ≈ $0.01 total (blueprint Table 36, Row 1).
-- Estimated monthly partner cost at hackathon scale: $1–5 (blueprint
+  ~$0.01 + Gemini Flash synthesis ≈ $0.01 total .
+- Estimated monthly partner cost at normal usage: $1–5 (
   Table 42, Row 7). Well within the $100 Google Cloud credit budget.
 
-## Demo-day stress test (blueprint Section 41.2)
+## Stress test 
 
-Test 1 (blueprint P1119): **Kill the Parallel API key; reload the app;
+Test 1 : **Kill the Parallel API key; reload the app;
 verify graceful degradation.** Expected: the Research Panel shows
 "Research unavailable — using creative inference" notes on each query;
 the Bible still builds with empty `references[]` on affected entries; the
 rest of the pipeline (Veo / Chirp / Lyria / Imagen / Consistency) still
-works. This test is run before every demo-day submission.
+works. This test is run before every operations submission.
 
 ## Cross-references
 

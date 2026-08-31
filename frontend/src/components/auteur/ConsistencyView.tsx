@@ -1,17 +1,27 @@
 /**
  * ConsistencyView — blueprint Section 30.2 row 9.
- * Bar chart of drift per shot; per-attribute breakdown; accept/reject.
+ * Drift dashboard with per-shot breakdown + working Accept/Re-generate.
  *
- * Calls POST /api/projects/{id}/shots/check-all to run the real Consistency
- * Check Agent (Gemini 3.1 Pro vision) on every shot, comparing each to the
- * character reference image.
+ * The Accept button marks a shot as approved (moves to assembly-ready).
+ * The Re-generate button calls POST /shots/{id}/regenerate with drift
+ * correction — the prior drift report is injected as corrective context
+ * into the Veo prompt, then the shot is re-checked. The before/after
+ * scores are shown inline.
  */
 "use client";
 
-import { useEffect, useState } from "react";
-import { Gauge, ChevronRight, Check, RotateCcw, Loader2, AlertCircle, Play, Film } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Gauge, ChevronRight, Check, RotateCcw, Loader2, AlertCircle, Film, Zap } from "lucide-react";
 import { useStudio } from "@/lib/store";
-import { checkAllShots, getShots, type ConsistencyAllResponse, type ConsistencyShotReport } from "@/lib/api";
+import {
+  checkAllShots,
+  getShots,
+  regenerateShot,
+  autoRegenerate,
+  type ConsistencyAllResponse,
+  type ConsistencyShotReport,
+  type RegenerationResponse,
+} from "@/lib/api";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState, Spinner } from "@/components/auteur/StateComponents";
@@ -23,6 +33,13 @@ export function ConsistencyView() {
   const [error, setError] = useState<string | null>(null);
   const [shotsReady, setShotsReady] = useState(false);
   const [checkingShots, setCheckingShots] = useState(true);
+  const [autoRegenLoading, setAutoRegenLoading] = useState(false);
+  const [autoRegenResult, setAutoRegenResult] = useState<string | null>(null);
+  // Track per-shot regeneration state + results
+  const [regenerating, setRegenerating] = useState<Record<string, boolean>>({});
+  const [regenResults, setRegenResults] = useState<Record<string, RegenerationResponse>>({});
+  // Track accepted shots
+  const [accepted, setAccepted] = useState<Record<string, boolean>>({});
 
   // 1. First check if shots have been generated (status != "pending")
   useEffect(() => {
@@ -39,7 +56,7 @@ export function ConsistencyView() {
       .catch(() => setCheckingShots(false));
   }, [project]);
 
-  async function handleCheck() {
+  const handleCheck = useCallback(async () => {
     if (!project) return;
     setLoading(true);
     setError(null);
@@ -51,14 +68,58 @@ export function ConsistencyView() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [project]);
 
-  // 2. Only auto-run if shots have been generated
-  useEffect(() => {
-    if (project && shotsReady && !result && !loading) {
-      handleCheck();
+  // Re-generate a single shot (the closed loop with drift correction)
+  const handleRegenerate = useCallback(async (shotId: string, reason: string) => {
+    if (!project || !bible) return;
+    setRegenerating((prev) => ({ ...prev, [shotId]: true }));
+    setError(null);
+    try {
+      const r = await regenerateShot(
+        project.id,
+        shotId,
+        reason,
+        bible.version,
+        true, // use_drift_correction
+      );
+      setRegenResults((prev) => ({ ...prev, [shotId]: r }));
+      // Re-run check-all to refresh the dashboard with the new scores
+      await handleCheck();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "regeneration failed");
+    } finally {
+      setRegenerating((prev) => ({ ...prev, [shotId]: false }));
     }
-  }, [project, shotsReady]);
+  }, [project, bible, handleCheck]);
+
+  // Accept a shot (marks it as accepted in the local state)
+  const handleAccept = useCallback((shotId: string) => {
+    setAccepted((prev) => ({ ...prev, [shotId]: true }));
+  }, []);
+
+  // Auto-regenerate all drifted shots (the autonomous loop)
+  const handleAutoRegenerate = useCallback(async () => {
+    if (!project) return;
+    setAutoRegenLoading(true);
+    setError(null);
+    setAutoRegenResult(null);
+    try {
+      const r = await autoRegenerate(project.id);
+      const n = r.shots_regenerated;
+      setAutoRegenResult(
+        n === 0
+          ? `All ${r.shots_checked} shots passed the drift threshold (≤ ${r.threshold}). No regeneration needed.`
+          : `Auto-regenerated ${n} of ${r.shots_checked} shots (those above the ${r.threshold} drift threshold).`,
+      );
+      // Refresh the dashboard
+      await handleCheck();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "auto-regeneration failed");
+    } finally {
+      setAutoRegenLoading(false);
+    }
+  }, [project, handleCheck]);
 
   const meanOverall = result?.mean_overall ?? 0;
   const threshold = result?.threshold ?? 0.25;
@@ -123,8 +184,18 @@ export function ConsistencyView() {
         <div className="mb-6 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-200">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <div className="font-medium">Consistency check error</div>
+            <div className="font-medium">Error</div>
             <div className="mt-0.5 text-amber-200/80">{error}</div>
+          </div>
+        </div>
+      )}
+
+      {autoRegenResult && (
+        <div className="mb-6 flex items-start gap-2 rounded-lg border border-teal-500/30 bg-teal-500/5 p-3 text-xs text-teal-200">
+          <Zap className="mt-0.5 h-4 w-4 shrink-0 text-teal-400" />
+          <div>
+            <div className="font-medium">Autonomous loop</div>
+            <div className="mt-0.5 text-teal-200/80">{autoRegenResult}</div>
           </div>
         </div>
       )}
@@ -155,17 +226,27 @@ export function ConsistencyView() {
       {result && (
         <div className="space-y-4">
           {result.shots.map((s) => (
-            <ShotDriftCard key={s.shot_id} shot={s} />
+            <ShotDriftCard
+              key={s.shot_id}
+              shot={s}
+              projectId={project?.id}
+              bibleVersion={bible?.version}
+              onRegenerate={handleRegenerate}
+              onAccept={handleAccept}
+              isRegenerating={!!regenerating[s.shot_id]}
+              regenResult={regenResults[s.shot_id]}
+              isAccepted={!!accepted[s.shot_id]}
+            />
           ))}
         </div>
       )}
 
-      {/* run button */}
-      <div className="mt-6 flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3">
+      {/* action buttons */}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3">
         <span className="text-xs text-zinc-400">
           {result ? `checked ${result.shots.length} shots in ${result.elapsed_sec}s` : "no checks run yet"}
         </span>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={handleCheck}
             disabled={loading || !project}
@@ -173,6 +254,15 @@ export function ConsistencyView() {
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
             Re-check all
+          </button>
+          <button
+            onClick={handleAutoRegenerate}
+            disabled={autoRegenLoading || !project || !result}
+            className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-500/20 disabled:opacity-50"
+            title="The autonomous loop: check all shots, auto-regenerate those above the drift threshold"
+          >
+            {autoRegenLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+            Auto-regenerate drifted
           </button>
           <button
             onClick={() => setView("assembly")}
@@ -188,12 +278,40 @@ export function ConsistencyView() {
   );
 }
 
-function ShotDriftCard({ shot }: { shot: ConsistencyShotReport }) {
+// --------------------------------------------------------------------------- //
+// Per-shot drift card with working Accept + Re-generate buttons
+// --------------------------------------------------------------------------- //
+
+interface ShotDriftCardProps {
+  shot: ConsistencyShotReport;
+  projectId?: string;
+  bibleVersion?: number;
+  onRegenerate: (shotId: string, reason: string) => void;
+  onAccept: (shotId: string) => void;
+  isRegenerating: boolean;
+  regenResult?: RegenerationResponse;
+  isAccepted: boolean;
+}
+
+function ShotDriftCard({
+  shot,
+  onRegenerate,
+  onAccept,
+  isRegenerating,
+  regenResult,
+  isAccepted,
+}: ShotDriftCardProps) {
   const overall = shot.overall ?? 0;
   const drift = shot.drift_score ?? (1 - overall);
   const passes = drift <= 0.25;
   const hasData = shot.status === "checked" || shot.status === "cached";
   const hasError = shot.status === "failed" || shot.status === "no_video" || shot.status === "frame_extract_failed" || shot.status === "no_char_ref" || shot.status === "check_failed";
+
+  // The regeneration result's consistency scores (the "after" state)
+  const regenConsistency = regenResult?.consistency;
+  const regenOverall = regenConsistency?.overall;
+  const regenDrift = regenConsistency?.drift_score;
+  const regenPasses = regenDrift !== null && regenDrift !== undefined ? regenDrift <= 0.25 : passes;
 
   return (
     <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
@@ -262,13 +380,55 @@ function ShotDriftCard({ shot }: { shot: ConsistencyShotReport }) {
         </p>
       )}
 
+      {/* regeneration before/after evidence */}
+      {regenResult && regenOverall !== null && regenOverall !== undefined && (
+        <div className="mt-3 rounded-md border border-teal-500/30 bg-teal-500/5 p-2.5">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-teal-300">
+            <Zap className="h-3 w-3" />
+            Regeneration result {regenResult.drift_correction_applied ? "· drift-diagnosis-informed" : "· fresh sample"}
+          </div>
+          <div className="flex items-center gap-3 text-[11px]">
+            <span className="text-zinc-500">
+              before: <span className="font-mono text-zinc-400">{overall.toFixed(2)}</span>
+              <span className="text-zinc-600"> (drift {drift.toFixed(2)})</span>
+            </span>
+            <span className="text-zinc-600">→</span>
+            <span className="text-zinc-300">
+              after: <span className={`font-mono font-bold ${regenPasses ? "text-emerald-400" : "text-amber-400"}`}>{regenOverall.toFixed(2)}</span>
+              <span className="text-zinc-500"> (drift {(regenDrift ?? 0).toFixed(2)})</span>
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Accept + Re-generate buttons — now fully functional */}
       {hasData && (
         <div className="mt-3 flex gap-2">
-          <button className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300 transition hover:bg-emerald-500/20">
-            <Check className="h-3 w-3" /> Accept
+          <button
+            onClick={() => onAccept(shot.shot_id)}
+            disabled={isRegenerating || isAccepted}
+            className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[11px] font-medium transition disabled:opacity-50 ${
+              isAccepted
+                ? "border-emerald-500/50 bg-emerald-500/20 text-emerald-300"
+                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+            }`}
+          >
+            {isAccepted ? (
+              <><Check className="h-3 w-3" /> Accepted</>
+            ) : (
+              <><Check className="h-3 w-3" /> Accept</>
+            )}
           </button>
-          <button className="inline-flex items-center gap-1 rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-[11px] font-medium text-zinc-400 transition hover:border-zinc-600 hover:text-zinc-200">
-            <RotateCcw className="h-3 w-3" /> Re-generate
+          <button
+            onClick={() => onRegenerate(shot.shot_id, `drift ${drift.toFixed(2)} above threshold`)}
+            disabled={isRegenerating}
+            className="inline-flex items-center gap-1 rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-[11px] font-medium text-zinc-300 transition hover:border-teal-500/40 hover:bg-zinc-800 hover:text-teal-300 disabled:opacity-50"
+          >
+            {isRegenerating ? (
+              <><Loader2 className="h-3 w-3 animate-spin" /> Regenerating...</>
+            ) : (
+              <><RotateCcw className="h-3 w-3" /> Re-generate</>
+            )}
           </button>
         </div>
       )}

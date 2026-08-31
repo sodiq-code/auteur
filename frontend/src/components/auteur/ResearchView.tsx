@@ -7,8 +7,8 @@
  *   1. Research Agent calls Parallel Search (x-api-key) → grounded references
  *   2. Gemini 3.1 Pro synthesizes a typed Film Bible from the references
  *
- * The Parallel Search results are streamed into the UI as they arrive, so judges
- * can see the partner API being called live (blueprint P670 — #1 anti-anti-pattern).
+ * The Parallel Search results are streamed into the UI as they arrive, so
+ * the partner API integration is visible in real time.
  */
 "use client";
 
@@ -19,12 +19,12 @@ import { buildBible, type BuildBibleResponse } from "@/lib/api";
 import type { FilmBible, Reference } from "@/lib/types";
 
 const RESEARCH_STAGES = [
-  "Formulating search queries from logline...",
-  "Calling Parallel Search API (x-api-key)...",
-  "Grounding era + setting references...",
-  "Grounding wardrobe + location references...",
-  "Synthesizing Film Bible via Gemini 3.1 Pro...",
-  "Persisting Bible v1 (immutable snapshot)...",
+  "Formulating search queries from the logline",
+  "Querying the Parallel Search API (x-api-key)",
+  "Grounding era and setting references",
+  "Grounding wardrobe and location references",
+  "Synthesizing the Film Bible via Gemini 3.1 Pro",
+  "Persisting Bible v1 (immutable snapshot)",
 ] as const;
 
 export function ResearchView() {
@@ -86,7 +86,7 @@ export function ResearchView() {
           Step 2 — Research Agent
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-zinc-100">
-          Grounding your film in reality
+          Grounding the production in reality
         </h2>
         <p className="mt-1.5 text-sm text-zinc-400">
           The Research Agent calls the{" "}
@@ -153,7 +153,7 @@ export function ResearchView() {
         {streamedRefs.length === 0 && !done && researchProgress !== "error" && (
           <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-6 text-center text-xs text-zinc-600">
             <Loader2 className="mx-auto mb-2 h-4 w-4 animate-spin text-zinc-600" />
-            Awaiting Parallel Search results...
+            Awaiting Parallel Search results
           </div>
         )}
         {streamedRefs.map((ref, i) => (
@@ -181,7 +181,7 @@ export function ResearchView() {
       {done && (
         <div className="auteur-rise mt-8 flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3">
           <span className="text-xs text-emerald-300">
-            ✓ Bible v1 built from {streamedRefs.length} grounded references (real Parallel Search + Gemini 3.1 Pro)
+            Bible v1 built from {streamedRefs.length} grounded references (Parallel Search and Gemini 3.1 Pro)
           </span>
           <button
             onClick={() => setView("bible")}

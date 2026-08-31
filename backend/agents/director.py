@@ -122,15 +122,19 @@ async def _generate_research_queries(logline: str) -> list[str]:
 
 
 async def _synthesize_bible(logline: str, refs: list) -> FilmBible:
-    """Call Gemini 3.1 Pro to build the typed Film Bible from logline + references."""
+    """Call Gemini 3.1 Pro (via the ADK Director Agent's model) to build the
+    typed Film Bible from logline + references."""
+    from .adk_registry import director_agent  # ADK integration point
+
     refs_text = "\n".join(
         f"- [{i+1}] {r.title} ({r.url})\n  {r.snippet}"
         for i, r in enumerate(refs[:6])
     ) or "(no research references available — use creative inference, clearly labeled)"
 
     prompt = (
-        "You are Auteur's Director Agent (blueprint Section 22.1). Build a typed "
-        "Film Bible from this logline + research references. Return STRICT JSON only.\n\n"
+        f"{director_agent.instruction}\n\n"
+        "Build a typed Film Bible from this logline + research references. "
+        "Return STRICT JSON only.\n\n"
         f"LOGLINE: {logline}\n\n"
         f"RESEARCH REFERENCES:\n{refs_text}\n\n"
         "Return JSON with this exact schema:\n"
@@ -141,15 +145,22 @@ async def _synthesize_bible(logline: str, refs: list) -> FilmBible:
         '  "locations": [{"name": "...", "description": "...", "era": "1892"}],\n'
         '  "style_anchors": [{"color_grade": "...", "aspect_ratio": "16:9", '
         '"photographic_aesthetic": "...", "mood": "..."}],\n'
+        '  "score_motifs": [{"name": "...", "prompt": "a slow melancholic solo fiddle, cinematic", '
+        '"instrument": "Solo fiddle", "mood": "Melancholic"}],\n'
         '  "story_beats": [{"order": 1, "description": "..."}],\n'
         '  "citations": ["url1", "url2"]\n'
         "}\n"
         "Constraints:\n"
         "- Cite the research references wherever possible.\n"
         "- If you have no research reference for a fact, omit it (do NOT invent facts).\n"
-        "- Maximum 4 shots worth of story beats (hackathon scope).\n"
+        "- Maximum 4 shots worth of story beats.\n"
+        "- Include at least one score_motif with a specific Lyria-friendly prompt.\n"
     )
-    data = await gemini.pro_generate_json(prompt, temperature=0.4)
+    # Route through the ADK agent's model + config
+    data = await gemini.pro_generate_json(
+        prompt,
+        temperature=director_agent.generate_content_config.temperature or 0.4,
+    )
 
     # Map to the typed schema
     from ..bible.schema import (
@@ -203,11 +214,76 @@ async def _synthesize_bible(logline: str, refs: list) -> FilmBible:
         description=b.get("description", ""),
     ) for i, b in enumerate(data.get("story_beats", []))]
 
+    return _build_bible_from_data(data, logline, characters, locations, style_anchors, story_beats)
+
+
+def _build_bible_from_data(
+    data: dict,
+    logline: str,
+    characters: list,
+    locations: list,
+    style_anchors: list,
+    story_beats: list,
+) -> FilmBible:
+    """Assemble the typed Film Bible, deriving wardrobes/voice_profiles/score_motifs
+    from the character + style data so every Bible tab is populated."""
+    from ..bible.schema import (
+        WardrobeSpec, VoiceProfileSpec, ScoreMotifSpec,
+    )
+
+    # Derive wardrobes from character wardrobe strings
+    wardrobes = []
+    for c in characters:
+        if c.wardrobe:
+            # Parse the wardrobe string into garment/fabric/color heuristically
+            wardrobe_text = c.wardrobe
+            wardrobes.append(WardrobeSpec(
+                character_id=c.id,
+                garment=wardrobe_text.split(",")[0].strip() if "," in wardrobe_text else wardrobe_text[:60],
+                fabric="",  # parsed from the description if available
+                color="",
+            ))
+
+    # Derive voice profiles from character voice_profile strings
+    voice_profiles = []
+    for c in characters:
+        if c.voice_profile:
+            voice_profiles.append(VoiceProfileSpec(
+                character_id=c.id,
+                voice_model="gemini-3.1-flash-tts-preview",
+                voice_name="Charon",  # the prebuilt voice used by the TTS integration
+                description=c.voice_profile,
+            ))
+
+    # Derive a score motif from the style anchor mood (or from the LLM's score_motifs if provided)
+    score_motifs = []
+    llm_motifs = data.get("score_motifs", [])
+    if llm_motifs:
+        for m in llm_motifs:
+            score_motifs.append(ScoreMotifSpec(
+                name=m.get("name", "Theme"),
+                prompt=m.get("prompt", "a cinematic film score, orchestral, sparse"),
+                instrument=m.get("instrument", ""),
+                mood=m.get("mood", ""),
+            ))
+    elif style_anchors:
+        s = style_anchors[0]
+        mood = s.mood or "cinematic"
+        score_motifs.append(ScoreMotifSpec(
+            name=f"{mood.capitalize()} theme",
+            prompt=f"a {mood} cinematic film score, orchestral, sparse",
+            instrument="Orchestra",
+            mood=mood,
+        ))
+
     return FilmBible(
         version=1,
         logline=data.get("logline", logline),
         characters=characters,
         locations=locations,
+        wardrobes=wardrobes,
+        voice_profiles=voice_profiles,
+        score_motifs=score_motifs,
         style_anchors=style_anchors,
         story_beats=story_beats,
     )

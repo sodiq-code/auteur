@@ -245,3 +245,109 @@
 .auteur-verdict-ring {
   animation: auteur-ring-pulse 2.4s ease-out infinite;
 }
+
+/* ------------------------------------------------------------------ */
+/* Auteur — additional polish (carousel glow, shimmer, kbd)           */
+/* ------------------------------------------------------------------ */
+
+/* Carousel image card: hover lift + glow */
+.auteur-carousel-card {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.4s ease,
+              box-shadow 0.4s ease,
+              filter 0.4s ease;
+}
+.auteur-carousel-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  border-color: rgb(45 212 191 / 0.55);
+  box-shadow: 0 18px 48px -14px rgb(20 184 166 / 0.4),
+              0 0 0 1px rgb(45 212 191 / 0.15) inset;
+  filter: brightness(1.08) saturate(1.05);
+}
+.auteur-carousel-card:hover .auteur-carousel-frame {
+  transform: scale(1.06);
+}
+.auteur-carousel-frame {
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Shimmer sweep across headline gradient */
+@keyframes auteur-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.auteur-shimmer {
+  background-size: 200% 200%;
+  animation: auteur-shimmer 8s ease-in-out infinite;
+}
+
+/* Keyboard <kbd> chip styling */
+.auteur-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.4rem;
+  border-radius: 0.3rem;
+  border: 1px solid rgb(63 63 70);
+  border-bottom-width: 2px;
+  background: rgb(24 24 27);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  line-height: 1;
+  color: rgb(212 212 216);
+  box-shadow: 0 1px 0 0 rgb(0 0 0 / 0.4);
+}
+
+/* Example logline card hover affordance */
+.auteur-example-card {
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.3s ease,
+              background-color 0.3s ease,
+              padding 0.3s ease;
+}
+.auteur-example-card:hover {
+  transform: translateX(4px);
+  border-color: rgb(45 212 191 / 0.5);
+  background-color: rgb(24 24 27);
+  padding-left: 1.25rem;
+}
+.auteur-example-card .auteur-example-arrow {
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.auteur-example-card:hover .auteur-example-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Char-limit progress bar fill transition */
+.auteur-char-bar {
+  transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.25s ease;
+}
+
+/* Focus glow on the logline textarea */
+.auteur-textarea-glow:focus {
+  box-shadow: 0 0 0 3px rgb(20 184 166 / 0.15),
+              0 0 24px -4px rgb(20 184 166 / 0.2);
+}
+
+/* Command palette fade-in */
+@keyframes auteur-cmd-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.auteur-cmd-in {
+  animation: auteur-cmd-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Stats ribbon subtle divider */
+.auteur-ribbon-divider {
+  background: linear-gradient(90deg, transparent, rgb(63 63 70) 50%, transparent);
+  height: 1px;
+}

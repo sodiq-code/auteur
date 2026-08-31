@@ -1,9 +1,9 @@
 # Auteur — REST API Contract
 
-> Source: blueprint Section 26.2, Table 38. This is the authoritative contract
+> REST API contract. All endpoints are versioned under
 > for the FastAPI service `auteur-api` deployed on Cloud Run. All endpoints
-> are versioned under `/api` and require no authentication (hackathon scope,
-> anonymous projects — blueprint Table 27, Row 14).
+> are versioned under `/api` and require no authentication ,
+> anonymous projects).
 
 ## Conventions
 
@@ -15,11 +15,11 @@
   server error with a JSON body `{ "error": "...", "detail": "..." }`.
 - **Streaming:** the `generate` endpoint streams progress over
   **Server-Sent Events (SSE)** rather than returning a single JSON body
-  (blueprint Table 38, Row 6).
-- **Project IDs:** 128-bit UUIDv4 (blueprint Table 39, Row 4). There is no
+  .
+- **Project IDs:** 128-bit UUIDv4 . There is no
   project-listing endpoint — IDs are unguessable.
 
-## Endpoints (blueprint Table 38 — reproduced exactly)
+## Endpoints 
 
 | # | Endpoint | Method | Purpose | Request | Response |
 |---|---|---|---|---|---|
@@ -47,7 +47,7 @@ Bible v1 (Research Agent runs, Director builds the typed Bible, persists
 `bibles/{projectId}/1` in Firestore, returns the typed object). This is the
 main entry point — a single logline in, a typed Film Bible out.
 
-- **Request body:** `{ "logline": string }` (max 280 chars, blueprint Table 39
+- **Request body:** `{ "logline": string }` (max 280 chars, Table 39
   Row 2 — input sanitization; reject if it contains prompt-injection patterns).
 - **Response 201:** `{ "projectId": string (UUIDv4), "bible": <Bible v1> }`
   (see `docs/bible-schema.md` for the `FilmBible` shape).
@@ -64,13 +64,13 @@ metadata, current Bible, shots, and the most recent generation per shot.
 
 Returns the current Bible version (highest integer in the append-only
 `bibles/{projectId}/{version}` collection). The UI's Bible Pane binds to
-this response (blueprint Section 30.3).
+this response .
 
 ### 4. `PATCH /api/projects/{id}/bible/entries/{entryId}` — edit bible entry
 
 Edits a single field on a character / location / wardrobe / voice / score /
 style / story-beat entry. Each PATCH creates a new immutable Bible version
-(`v{n+1}`) — never mutates `v{n}` in place (blueprint Section 23.3). The
+(`v{n+1}`) — never mutates `v{n}` in place . The
 Director propagates the edit to affected shots (their `bible_version` field
 becomes stale, prompting re-generation).
 
@@ -80,7 +80,7 @@ Returns the ordered shot list with `bible_version` per shot, generation IDs,
 status (`pending | generating | ready | drift | accepted`), and drift
 scores.
 
-### 6. `POST /api/projects/{id}/shots/{shotId}/generate` — trigger generation (SSE)
+### 6. `POST /api/projects/{id}/shots/{shotId}/generate` — trigger generation (SSE
 
 The most complex endpoint. Triggers the generation pipeline for one shot:
 Imagen storyboard → Veo 3.1 video → Chirp 3 voice → Lyria 2 score →
@@ -91,7 +91,7 @@ body.
 - **Response:** `text/event-stream` (SSE). The first event returns
   `{ "generationId": "..." }` so the client can correlate subsequent events
   (see Event Types below).
-- **SSE event types** (blueprint Section 24.3):
+- **SSE event types** :
   ```
   event: generation_started
   data: {"shotId": "...", "modality": "imagen"}
@@ -108,17 +108,17 @@ body.
   event: generation_failed
   data: {"shotId": "...", "modality": "veo", "error": "..."}
   ```
-- **Why SSE:** blueprint Table 27, Row 13 — simple, HTTP-native, works with
+- **Why SSE:** Table 27, Row 13 — simple, HTTP-native, works with
   Cloud Run, no WebSocket complexity.
-- **Failure handling** (blueprint Table 40, Row 2): on Veo 5xx / quota 429,
+- **Failure handling** : on Veo 5xx / quota 429,
   retry once with Veo Light; if still failing, stream a `generation_failed`
-  event and fall back to the pre-rendered shot from the demo bucket.
+  event and fall back to the sample shot from the demo.
 
 ### 7. `POST /api/projects/{id}/shots/{shotId}/regenerate` — re-generate
 
-Re-runs generation with stricter context injection: the previous drift
+Re-runs generation with drift report as corrective context: the previous drift
 breakdown is appended to the Veo prompt so the model receives more specific
-guidance (blueprint Section 23.4 — Context injection). Request body carries
+guidance . Request body carries
 a `reason` (e.g., `"drift 0.34"` or a user note) which is logged in the
 event trail for auditability.
 
@@ -127,8 +127,8 @@ event trail for auditability.
 Returns the most recent drift report for the shot: the aggregate
 `drift_score` (0.0 = identical, 1.0 = totally drifted), the per-attribute
 breakdown (character / location / wardrobe / style), and the
-recommendation (`accept` or `re-generate`). The threshold defaults to 0.25
-and tunes per project (blueprint Section 23.4 — Threshold tuning).
+recommendation (`accept` or `re-generate`). The threshold defaults to 0.25 (an engineering operating threshold, not a statistically validated perceptual-quality boundary)
+and tunes per project .
 
 ### 9. `POST /api/projects/{id}/assemble` — assemble final film
 
@@ -138,16 +138,16 @@ final.mp4`). Returns the public URL of the assembled film.
 
 ### 10. `POST /api/projects/{id}/share` — create share link
 
-Generates an 8-char random slug (2^48 entropy, blueprint Table 39, Row 6) and
+Generates an 8-char random slug (2^48 entropy, Table 39, Row 6) and
 returns it. The slug is used by the public share view at `/share/{slug}`
-(blueprint Section 30.2). The share page renders the assembled film, the
+. The share page renders the assembled film, the
 Film Bible, and the side-by-side signature moment.
 
 ### 11. `GET /api/projects/{id}/export/bible` — export bible JSON
 
 Downloads the current Bible as a standalone JSON file. This is the
 open-source escape hatch: a user's curated Bible is portable structured
-data they own (blueprint Section 38.6).
+data they own .
 
 ### 12. `GET /api/projects/{id}/export/shots` — export shot list CSV
 
@@ -157,7 +157,7 @@ with the shot list outside Auteur.
 
 ### 13. `GET /api/projects/{id}/events` — get event log
 
-Returns the project's full event trail (blueprint Section 24.3):
+Returns the project's full event trail :
 `project_created`, `logline_submitted`, `research_started`,
 `research_completed`, `bible_built (version: n)`, `bible_edited (field,
 old, new) → bible_version: n+1`, `shot_list_generated`,
@@ -171,7 +171,7 @@ narrative and for audit.
 ### 14. `GET /api/health` — health check
 
 Returns the integration health used by the Cloud Run smoke test and the
-demo-day runbook (blueprint Section 28.4, Step 00:00).
+operations runbook .
 
 ```json
 {
@@ -183,26 +183,26 @@ demo-day runbook (blueprint Section 28.4, Step 00:00).
 
 - `status`: aggregate ("ok" if Firestore + Cloud Storage reachable).
 - `partner_status`: probes the Parallel Search API with a test query
-  (blueprint Section 28.4, Step 00:05). `"ok"` if the Bearer token is valid
+  . `"ok"` if the Bearer token is valid
   and the API responds within 10s; `"degraded"` if returning cached results
   or unreachable.
 - `model_status`: probes Vertex AI quota by listing the Veo publisher model
-  (blueprint Section 28.4, Step 00:10). `"ok"` if Veo / Chirp / Lyria /
+  . `"ok"` if Veo / Chirp / Lyria /
   Gemini / Imagen successor are all reachable.
 
-## Rate limits and abuse prevention (blueprint Table 39)
+## Rate limits and abuse prevention 
 
 - Per-IP rate limit: max 2 projects / hour (Row 3).
-- Per-project shot cap: 4 shots (hackathon scope).
+- Per-project shot cap: 4 shots ).
 - Anonymous generations use the Veo iteration tier only; the Standard tier
   is reserved for the final demo render.
 
 ## Cross-references
 
-- Bible shape: [`docs/bible-schema.md`](bible-schema.md)
+- Bible shape: [`docs/bible-schema.md`](bible-schema.md
 - Parallel Search integration (underlying `partner_status` probe):
-  [`docs/partner-integration.md`](partner-integration.md)
-- Per-API failure handling: blueprint Table 40 (see `docs/architecture.md`
+  [`docs/partner-integration.md`](partner-integration.md
+- Per-API failure handling: Table 40 (see `docs/architecture.md`
   and `docs/partner-integration.md`).
 - Demo script that drives the UI through these endpoints:
-  [`docs/demo-script.md`](demo-script.md)
+  [`docs/demo-script.md`](demo-script.md

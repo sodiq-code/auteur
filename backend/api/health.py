@@ -38,7 +38,7 @@ def health() -> dict[str, Any]:
                       "configured": bool(os.environ.get("GCP_PROJECT_ID"))},
             "bible": {"model": "gemini-3.1-pro-preview", "region": "global",
                       "configured": bool(os.environ.get("GCP_PROJECT_ID"))},
-            "tts": {"model": "gemini-2.5-flash-tts", "region": "us-central1",
+            "tts": {"model": "gemini-3.1-flash-tts-preview", "region": "us-central1",
                     "configured": bool(os.environ.get("GCP_PROJECT_ID"))},
             "lyria": {"model": "lyria-002", "region": "us-central1",
                       "configured": bool(os.environ.get("GCP_PROJECT_ID"))},

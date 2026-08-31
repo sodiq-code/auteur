@@ -2,15 +2,39 @@
 Auteur — ADK agent registry.
 
 Instantiates the three agents as Google Agent Development Kit (ADK) `Agent`
+<<<<<<< HEAD
 objects with their models, instructions, and tool bindings.
+=======
+objects with their models, instructions, and tool bindings. The Director,
+Research, and Consistency Check modules reference these objects for their
+reasoning model + instruction context — this is the ADK integration point.
+
+The ADK `Agent` provides the agent identity (name, model, instruction, tools,
+generate_content_config). The pipeline modules drive the tool execution;
+the ADK Agent's model is used for the reasoning calls (which tool next, how
+to synthesize, how to score).
+>>>>>>> origin/main
 """
 from __future__ import annotations
 
 from google.adk import Agent
 from google.genai import types
 
+<<<<<<< HEAD
 _REASONING_CONFIG = types.GenerateContentConfig(temperature=0.2)
 
+=======
+# --------------------------------------------------------------------------- #
+# Shared generate-content config (low temperature for deterministic reasoning)
+# --------------------------------------------------------------------------- #
+
+_REASONING_CONFIG = types.GenerateContentConfig(temperature=0.2)
+
+# --------------------------------------------------------------------------- #
+# Director Agent — the orchestrator
+# --------------------------------------------------------------------------- #
+
+>>>>>>> origin/main
 DIRECTOR_INSTRUCTION = (
     "You are Auteur's Director Agent. You receive a film logline and orchestrate "
     "the full pipeline: research the era/setting via the Research Agent, synthesize "
@@ -29,6 +53,13 @@ director_agent = Agent(
     generate_content_config=_REASONING_CONFIG,
 )
 
+<<<<<<< HEAD
+=======
+# --------------------------------------------------------------------------- #
+# Research Agent — Parallel Search grounding
+# --------------------------------------------------------------------------- #
+
+>>>>>>> origin/main
 RESEARCH_INSTRUCTION = (
     "You are Auteur's Research Agent. You take a research objective + queries, "
     "call the Parallel Search API at runtime (x-api-key auth), cache the results "
@@ -44,6 +75,13 @@ research_agent = Agent(
     generate_content_config=_REASONING_CONFIG,
 )
 
+<<<<<<< HEAD
+=======
+# --------------------------------------------------------------------------- #
+# Consistency Check Agent — drift scoring
+# --------------------------------------------------------------------------- #
+
+>>>>>>> origin/main
 CONSISTENCY_INSTRUCTION = (
     "You are Auteur's Consistency Check Agent. You receive a character reference "
     "image and a video frame from a generated shot. You score the match on five "
@@ -61,6 +99,13 @@ consistency_agent = Agent(
     generate_content_config=_REASONING_CONFIG,
 )
 
+<<<<<<< HEAD
+=======
+# --------------------------------------------------------------------------- #
+# Registry — the three ADK agents
+# --------------------------------------------------------------------------- #
+
+>>>>>>> origin/main
 AGENTS: dict[str, Agent] = {
     "director": director_agent,
     "research": research_agent,

@@ -5,7 +5,7 @@
 "use client";
 
 import Image from "next/image";
-import { Share2, Copy, Check, Eye, ArrowLeft, ExternalLink, Film, BookOpen } from "lucide-react";
+import { Share2, Copy, Check, Eye, ArrowLeft, ExternalLink, Film, BookOpen, Volume2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useStudio } from "@/lib/store";
 import { getSharedProject, type SharedProject } from "@/lib/api";
@@ -44,7 +44,7 @@ export function ShareView() {
           Public share link
         </h2>
         <p className="auteur-rise mt-1.5 text-sm text-zinc-400" style={{ animationDelay: "0.15s" }}>
-          Anyone with this link can view your film + its Film Bible.
+          Anyone with this link can view the film and its Film Bible.
         </p>
       </div>
 
@@ -89,10 +89,10 @@ export function ShareView() {
         </div>
         <SideBySide
           shots={[
-            { id: 1, label: "Lamp Room", scene: "Interior, dusk", frame: "/auteur/day1/shot-1.png", score: 0.95 },
-            { id: 2, label: "Rocks", scene: "Coastal, dawn", frame: "/auteur/day1/shot-2.png", score: 0.85 },
-            { id: 3, label: "Interior", scene: "Candlelight", frame: "/auteur/day1/shot-3.png", score: 0.95 },
-            { id: 4, label: "Exterior", scene: "Balcony, dusk", frame: "/auteur/day1/shot-4.png", score: 0.95 },
+            { id: 1, label: "Lamp Room", scene: "Interior, dusk", frame: "/auteur/demo/shot-1.png", score: 0.95 },
+            { id: 2, label: "Rocks", scene: "Coastal, dawn", frame: "/auteur/demo/shot-2.png", score: 0.85 },
+            { id: 3, label: "Interior", scene: "Candlelight", frame: "/auteur/demo/shot-3.png", score: 0.95 },
+            { id: 4, label: "Exterior", scene: "Balcony, dusk", frame: "/auteur/demo/shot-4.png", score: 0.95 },
           ]}
           meanOverall={0.925}
           verdict="GO"
@@ -103,18 +103,34 @@ export function ShareView() {
       <div className="auteur-rise mb-6" style={{ animationDelay: "0.3s" }}>
         <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
           <Film className="h-3.5 w-3.5 text-teal-400" />
-          Your film
+          Final film
+          {sharedProject?.film_url && (
+            <Badge className="ml-2 border-0 bg-sky-500/15 text-sky-300">
+              <Volume2 className="mr-1 h-3 w-3" /> with sound
+            </Badge>
+          )}
         </div>
-        <div className="grid grid-cols-2 gap-1 overflow-hidden rounded-xl border border-zinc-800">
-          {["/auteur/day1/shot-1.png", "/auteur/day1/shot-2.png", "/auteur/day1/shot-3.png", "/auteur/day1/shot-4.png"].map((src, i) => (
-            <div key={i} className="relative aspect-video overflow-hidden">
-              <img src={src} alt={`Shot ${i + 1}`} className="h-full w-full object-cover" />
-              <div className="absolute left-2 top-2 rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[10px] text-teal-300 backdrop-blur">
-                #{i + 1}
+        {sharedProject?.film_url ? (
+          <div className="relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
+            <video
+              src={`${API_BASE}${sharedProject.film_url}`}
+              controls
+              playsInline
+              className="aspect-video h-full w-full"
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-1 overflow-hidden rounded-xl border border-zinc-800">
+            {["/auteur/demo/shot-1.png", "/auteur/demo/shot-2.png", "/auteur/demo/shot-3.png", "/auteur/demo/shot-4.png"].map((src, i) => (
+              <div key={i} className="relative aspect-video overflow-hidden">
+                <img src={src} alt={`Shot ${i + 1}`} className="h-full w-full object-cover" />
+                <div className="absolute left-2 top-2 rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[10px] text-teal-300 backdrop-blur">
+                  #{i + 1}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* bible summary */}
@@ -143,7 +159,7 @@ export function ShareView() {
           className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:border-zinc-600"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Make another film
+          Start a new production
         </button>
       </div>
     </div>

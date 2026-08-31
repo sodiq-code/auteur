@@ -1,28 +1,28 @@
 # Auteur — Demo Script (3-minute, Submission Version)
 
-> Source: blueprint Section 40.4 (3-minute submission demo) + Section 39
+> Demo script for the 3-minute submission video.
 > (Demo Architecture) + Section 30.5 (Side-by-side signature moment) +
 > Table 34 (Chirp 3 voiceover). The 5-beat structure follows the Oleksandr
-> pattern (blueprint P205): Problem → Solution → App demo → Technical
+> pattern : Problem → Solution → App demo → Technical
 > implementation → Closing.
 
-## Format (blueprint Section 39.3)
+## Format 
 
-- **Length:** 3 minutes (≤ 3:00 — hard submission requirement, blueprint
+- **Length:** 3 minutes (≤ 3:00 — hard requirement, 
   Section 33.2 Row P915).
 - **Aspect / resolution:** 16:9, 1080p, MP4.
 - **Voiceover:** Chirp 3-generated narration using the script below
-  (blueprint Section 39.3, "Voiceover: Chirp 3-generated narration with the
+  (Section 39.3, "Voiceover: Chirp 3-generated narration with the
   5-beat script").
 - **Visuals:** B-roll of the actual deployed UI + text overlays for key
-  claims (blueprint Section 39.3, "Visuals"). No stock footage.
-- **Subtitles:** English, verified (blueprint Section 33.2 Row P915).
-- **Default landing:** the deployed app loads the pre-rendered canonical
+  claims . No stock footage.
+- **Subtitles:** English, verified .
+- **Default landing:** the deployed app loads the sample
   demo automatically; the video includes one live Veo Light generation
-  triggered by the "Watch it live" button (blueprint Section 39.3, "Live
+  triggered by the "Watch it live" button (Section 39.3, "Live
   CTA").
 
-## 5-Beat structure (blueprint Section 39.2)
+## 5-Beat structure 
 
 | Beat | Time | Beat name | Goal |
 |---|---|---|---|
@@ -38,7 +38,7 @@
 
 **[0:00 – 0:05] HOOK.** Voiceover (Chirp 3, calm, low register):
 
-> "AI cinema's biggest unsolved problem is not video quality. It's
+> "AI cinema's problem is not video quality. It's
 > consistency."
 
 Visual: black frame; the word **CONSISTENCY** fades in amber (#E89B3C),
@@ -52,7 +52,7 @@ then dissolves.
 > shots — look at the drift. This is why every AI short film looks like
 > four different films."
 
-Visual: **THE SIDE-BY-SIDE SIGNATURE MOMENT** (blueprint Section 30.5).
+Visual: **THE SIDE-BY-SIDE SIGNATURE MOMENT** .
 Two columns. LEFT column (no Auteur): Shot 1 character A, Shot 2 character
 B, Shot 3 character C, Shot 4 character D — visibly different faces.
 Caption under the left column: `drift: chaotic · 4 different films`. RIGHT
@@ -74,7 +74,7 @@ character. 4 shots. 4 scenes. The only difference: Auteur remembers."*
 > bible into every Veo 3.1, Chirp 3, Lyria 2, and Imagen 3 call."
 
 Visual: full-screen UI of the Auteur workspace — Script Pane, Bible Pane,
-Shot Grid, Render Queue, Research Panel (blueprint Section 30.3). The Bible
+Shot Grid, Render Queue, Research Panel . The Bible
 Pane expands: Characters → Locations → Wardrobe → Voice → Score → Style →
 Beats. Each tab flips open for one second.
 
@@ -93,7 +93,7 @@ overlay: *"Every claim traces to a real URL."*
 ## Beat 3 — App demo (0:50 – 1:50)
 
 The heart of the demo — 60 seconds of live pipeline, recorded from the
-deployed app (blueprint Section 40.4, [30-90s] block).
+deployed app .
 
 **[0:50 – 0:55] Logline input.** Voiceover:
 
@@ -109,9 +109,9 @@ Visual: Script Pane with the logline typed, "Build my film" button clicked.
 > styles, Victorian sea shanties. Every search result is shown with its
 > source URL. The agent is grounding the film in real history."
 
-Visual: Research Panel (blueprint Section 30.2, "Research view"). Each
+Visual: Research Panel . Each
 query appears as it's sent. Results stream in with their URLs visible —
-this is the **#1 anti-anti-pattern mitigation** (blueprint Section 26.3,
+this is the **#1 anti-anti-pattern mitigation** (Section 26.3,
 P670): a judge watching the video sees the partner API being called live.
 
 **[1:05 – 1:15] Bible build.** Voiceover:
@@ -144,7 +144,7 @@ Visual: Render Queue. Each shot lights up with the active modality
 Consistency Dashboard populates per-shot drift scores. Shot 3 flashes
 amber (`drift 0.34`), then the Re-generate button pulses, then a fresh
 generation replaces it and the drift drops to `0.08`. This is the
-**learning loop made visible** (blueprint Section 22.4).
+**learning loop made visible** .
 
 **[1:45 – 1:50] Assembly.** Voiceover:
 
@@ -183,16 +183,16 @@ Consistency (Gemini Vision). Arrows show the agentic loop
 > grounding layer. Every creative decision can be traced to a real search
 > result."
 
-Visual: Pydantic models slide past (blueprint Section 23.2 — `CharacterSpec`,
+Visual: Pydantic models slide past (Section 23.2 — `CharacterSpec`,
 `LocationSpec`, `WardrobeSpec`, `VoiceProfileSpec`, `ScoreMotifSpec`,
 `StyleAnchorSpec`, `StoryBeat`, `FilmBible`). Provenance chain diagram:
 Parallel Search result → Bible v{n} → Generation → Drift report
-(blueprint Section 24.5).
+.
 
-> Day-1 validation note: blueprint specifies "Imagen 3"; on the live GCP
+> Day-1 validation note: specifies "Imagen 3"; on the live GCP
 > project, Imagen 3 is deprecated and `gemini-3-pro-image` is the
 > supported successor used to generate the persistent character reference
-> image. See `docs/validation-day-1-report.md` (mean cross-shot
+> image. See `docs/validation-report.md` (mean cross-shot
 > consistency 0.94, verdict GO).
 
 ---
@@ -221,7 +221,7 @@ fade to black at 3:00.
 
 ---
 
-## Production checklist (blueprint Section 32.2, Day 13)
+## Production checklist 
 
 - [ ] Record screen captures of the deployed app: canonical demo + one
   live Veo Light generation (the "Watch it live" CTA).
@@ -229,10 +229,10 @@ fade to black at 3:00.
   time, concatenated).
 - [ ] Edit in CapCut or iMovie; add text overlays for every key claim.
 - [ ] Upload to YouTube as unlisted; verify English subtitles; verify
-  ≤ 3:00; re-watch with audio muted (blueprint Section 41.2, Test 5) —
+  ≤ 3:00; re-watch with audio muted  —
   every key claim must be visible as a text overlay.
 
-## Companion versions (blueprint Section 40)
+## Companion versions 
 
 For social and judge-attention use, produce shorter cuts from this script:
 30-second (Twitter/X hook, Section 40.1), 60-second (LinkedIn / trailer,
@@ -247,4 +247,4 @@ the open-source strategy).
 - REST API exercised in the demo: [`docs/api-contract.md`](api-contract.md).
 - Bible schema shown in Beat 4: [`docs/bible-schema.md`](bible-schema.md).
 - Parallel Search visibility in Beat 3: [`docs/partner-integration.md`](partner-integration.md).
-- Day-1 validation evidence: [`docs/validation-day-1-report.md`](validation-day-1-report.md).
+- Day-1 validation evidence: [`docs/validation-report.md`](validation-report.md).
