@@ -32,16 +32,17 @@ async def build_bible(project: Project) -> FilmBible:
     await store.update_project_status(project.id, status="researching")
     await store.log_event(project.id, "logline_submitted", {"logline": project.logline})
 
-    # 1. Research
+    # 1. Research — the Director Agent decides what to research via Gemini,
+    #    then passes the LLM-generated queries to the Research Agent → Parallel Search
     objective = (
         f"Find historical references for a film with this logline: {project.logline}. "
         "Cover: era, setting, fashion/wardrobe, technology, music, mood."
     )
-    queries = [
-        project.logline,
-        f"historical context: {project.logline}",
-        "wardrobe + setting for the era",
-    ]
+    queries = await _generate_research_queries(project.logline)
+    await store.log_event(project.id, "research_queries_generated", {
+        "source": "llm",
+        "queries": queries,
+    })
     refs = await research_agent.research(project.id, objective, queries)
 
     # 2. Synthesize the bible via Gemini 3.1 Pro
@@ -81,6 +82,43 @@ async def generate_shot_list(project: Project, bible: FilmBible) -> list[ShotSpe
         shots.append(shot)
     await store.log_event(project.id, "shot_list_generated", {"count": len(shots)})
     return shots
+
+
+async def _generate_research_queries(logline: str) -> list[str]:
+    """The Director Agent asks Gemini to decide what to research.
+
+    This is the key agentic decision: the LLM determines what factual
+    information the film needs, rather than Python hardcoding the queries.
+    Falls back to generic queries if the LLM doesn't return valid ones.
+    """
+    from .adk_registry import director_agent
+
+    prompt = (
+        f"{director_agent.instruction}\n\n"
+        f"LOGLINE: {logline}\n\n"
+        "Determine what factual information is needed to ground this film in reality. "
+        "Generate 3-5 search queries that cover: the era/time period, the location/setting, "
+        "the clothing/wardrobe of the era, the music/cultural context, and any specific "
+        "historical or technical details mentioned in the logline.\n\n"
+        "Return STRICT JSON only:\n"
+        '{"queries": ["query 1", "query 2", "query 3", ...]}'
+    )
+    try:
+        data = await gemini.pro_generate_json(
+            prompt,
+            temperature=director_agent.generate_content_config.temperature or 0.3,
+        )
+        queries = data.get("queries", [])
+        if isinstance(queries, list) and len(queries) >= 2:
+            # Filter out empty strings
+            queries = [q.strip() for q in queries if isinstance(q, str) and q.strip()]
+            if len(queries) >= 2:
+                return queries[:5]  # cap at 5 queries
+    except Exception as e:
+        print(f"[DIRECTOR] LLM query generation failed: {str(e)[:200]}", flush=True)
+
+    # Fallback: if the LLM didn't generate valid queries, use generic ones
+    return [logline, f"historical context: {logline}"]
 
 
 async def _synthesize_bible(logline: str, refs: list) -> FilmBible:
