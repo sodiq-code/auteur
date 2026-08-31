@@ -6,6 +6,7 @@
 [![Backend](https://img.shields.io/badge/Backend-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
 [![Frontend](https://img.shields.io/badge/Frontend-Next.js%2016-000000.svg)](https://nextjs.org/)
 [![Cloud](https://img.shields.io/badge/Cloud-Google%20Cloud%20Run-4285F4.svg)](https://cloud.google.com/run)
+[![Demo](https://img.shields.io/badge/Demo%20Video-YouTube-FF0000.svg)](https://youtu.be/iVlglr66YXw)
 
 <p align="center">
   <a href="https://auteur-app-jbkbgthudq-uc.a.run.app">
@@ -15,6 +16,8 @@
 
 <p align="center">
   <a href="https://auteur-app-jbkbgthudq-uc.a.run.app"><strong>Try the live app →</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://youtu.be/iVlglr66YXw">3-min demo video</a>
   &nbsp;·&nbsp;
   <a href="https://auteur-dev-jbkbgthudq-uc.a.run.app/api/docs">API docs</a>
 </p>
@@ -443,4 +446,5 @@ MIT — see [`LICENSE`](./LICENSE).
 
 - **Repo:** <https://github.com/sodiq-code/auteur>
 - **Studio UI:** <https://auteur-app-jbkbgthudq-uc.a.run.app>
+- **Demo video:** <https://youtu.be/iVlglr66YXw>
 - **Agentic Cinema:** <https://agentic-cinema.devpost.com/>
