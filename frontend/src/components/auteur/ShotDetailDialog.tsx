@@ -48,9 +48,19 @@ export function ShotDetailDialog({
         </DialogHeader>
 
         <div className="max-h-[70vh] overflow-y-auto p-4 auteur-scroll">
-          {/* frame */}
+          {/* frame — use <video> if the frame is a video URL, otherwise <Image> */}
           <div className="relative mb-4 aspect-video overflow-hidden rounded-lg border border-zinc-800">
-            <Image src={shot.frame} alt={shot.label} fill className="object-cover" sizes="640px" />
+            {shot.frame.startsWith("http") || shot.frame.startsWith("/api/") ? (
+              <video
+                src={shot.frame}
+                className="h-full w-full object-cover"
+                controls
+                autoPlay
+                loop
+              />
+            ) : (
+              <Image src={shot.frame} alt={shot.label} fill className="object-cover" sizes="640px" />
+            )}
             <div className="absolute bottom-2 left-2 rounded bg-zinc-950/80 px-2 py-0.5 font-mono text-[10px] text-teal-300 backdrop-blur">
               Veo 3.1 · 8s · 1280×720
             </div>

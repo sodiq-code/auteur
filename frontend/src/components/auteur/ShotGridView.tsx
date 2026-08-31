@@ -46,10 +46,10 @@ export function ShotGridView({ onShotClick }: { onShotClick?: (shot: { id: numbe
           <Grid3x3 className="h-3.5 w-3.5 text-teal-400" />
           Step 6 — Shot Grid
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">{hasGenerated ? "Generated shots" : "One character. Four scenes."}</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">{hasGenerated ? "Your generated shots" : "One character. Four scenes."}</h2>
         <p className="mt-1.5 text-sm text-zinc-400">
           {hasGenerated
-            ? "The Veo 3.1 clips generated for this production. Click any shot for detail."
+            ? "The real Veo 3.1 clips generated for your film. Click any shot for detail."
             : "The signature moment: the same character held consistent across four different scenes via the Veo 3.1 ASSET reference."}
         </p>
       </div>
@@ -72,7 +72,7 @@ export function ShotGridView({ onShotClick }: { onShotClick?: (shot: { id: numbe
                   id: shot.order,
                   label: `Shot ${shot.order}`,
                   scene: shot.description.slice(0, 60),
-                  frame: "/auteur/demo/shot-1.png", // fallback thumbnail
+                  frame: `${API_BASE}/api/projects/${project.id}/shots/${shot.id}/video`,
                   score: 0.9,
                   notes: shot.description,
                 })}
