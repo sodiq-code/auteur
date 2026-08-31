@@ -61,7 +61,7 @@ exact Veo duration.
 | Component | What it does | Why it exists | What it does NOT do |
 |---|---|---|---|
 | Director Agent | Top-level orchestrator (`gemini-3.1-pro-preview`, global region). Receives logline, plans the pipeline, calls Research/Bible/Shot-list/Generation/Consistency/Assembly tools. | Orchestration logic is distinct from specialist logic; keeps each agent's prompt focused. | Cannot delete user data; cannot call Parallel Search directly (delegates to Research); cannot bypass user approval on bible edits. |
-| Research Agent | Specialist (`gemini-3.1-pro-preview`). Uses function calling to decide what to search, calls the Parallel Search API as an ADK function tool, evaluates results, and may issue follow-up searches. Synthesizes structured `Reference` objects. | Search-grounding is a distinct capability; isolating it lets us swap partners or add caching without touching the Director. The LLM controls the research trajectory, not Python. | Read-only — cannot write to the Bible; returns results to the Director, who writes. |
+| Research Agent | Specialist (`gemini-3.1-pro-preview`). Uses function calling to determine what to search, calls the Parallel Search API as an ADK function tool, evaluates results, and may issue follow-up searches. Synthesizes structured `Reference` objects. | Search-grounding is a distinct capability; isolating it lets us swap partners or add caching without touching the Director. The LLM controls the research trajectory via function calling. | Read-only — cannot write to the Bible; returns results to the Director, who writes. |
 | Consistency Check Agent | Specialist (`gemini-3.1-pro-preview`, vision). Compares each generated shot against the Bible references (character image, location image, wardrobe spec); produces a drift score and recommendation. | Consistency-checking is a distinct capability; isolating it lets us tune thresholds independently. | Cannot modify shots; only flags. Stateless — operates per-shot with no memory of prior runs. |
 | Film Bible | Typed, versioned, citable Pydantic schema stored in Firestore. Characters, Locations, Wardrobes, Voices, Score motifs, Style anchors, Story beats, References. | This is the project's core primitive — the persistent, structured memory that every generation cites. | Does not generate content itself; it is data, not an agent. Schema is defined in the `bible/schema.py`. |
 | Generation Pipeline | Orchestrates Veo/Chirp/Lyria/Imagen calls per shot, with bible-version citation, prompt construction, and per-shot character-ref ASSET injection. Each modality is independent — one failing does not block the others. | Wraps the multimodal model calls so the Director can treat them as one "generate shot" tool. The Chirp + Lyria WAV bytes are persisted to the in-memory generations store so the assembly pipeline can mux them into the final film's audio track. | Does not decide *which* shot to generate or *when* to re-generate — that is the Director's job. |
@@ -72,7 +72,7 @@ exact Veo duration.
 
 Auteur's memory is layered to keep ephemeral, persistent, versioned, and
 historical data in the right store. Per Section 22.5, this layered
-persistence is what makes the system *genuinely agentic* rather than
+persistence is what makes the system agentic rather than
 LLM-as-a-wrapper.
 
 | Layer | Type | Storage | Content | Read | Write |
@@ -159,7 +159,7 @@ Learn      if drift > threshold → re-generate with drift report as corrective 
 Update     Bible version increments; shot list updates; scores logged (L6)
 ```
 
-The loop is what makes the system agentic rather than a wrapper
+The loop is what makes this an agentic system
 : persistent state across the entire film (not per
 call), autonomous tool selection among 6 external + 3 internal tools, planning
 the research → bible → shot-list → generate → check → assemble sequence,

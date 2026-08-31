@@ -95,7 +95,7 @@ Generative filmmaking has two memory problems. Auteur solves both.
 | **Creative memory** | What must remain consistent across the film? | The **Film Bible** (typed, versioned, injected) |
 | **World memory** | What should the film know about reality? | **Parallel Search** (runtime, visible, cached) |
 
-Parallel is called at runtime by the Research Agent as an ADK function tool. The LLM decides what to search for (not Python), evaluates the returned results, and may issue follow-up searches when evidence is insufficient. Every tool call is logged as an `agent_tool_call` event. If Parallel is unavailable, the Research Agent logs the failure, returns empty refs, and the Director synthesizes the Bible from the logline alone. Verified by `backend/tests/test_fallback_no_parallel_key.py`.
+The Research Agent uses Parallel Search as an ADK function tool. The LLM determines what to search for based on the logline, calls the tool, evaluates the returned results, and may issue follow-up searches when evidence is insufficient. Every tool call is logged as an `agent_tool_call` event. If Parallel is unavailable, the Research Agent returns empty refs and the Director synthesizes the Bible from the logline alone. Verified by `backend/tests/test_fallback_no_parallel_key.py`.
 
 ---
 
@@ -209,7 +209,7 @@ The claims above are demonstrated, not asserted.
 | 4-shot generation (Veo 3.1) | 4 clips, 4 scenes, mean consistency **0.925** — [`docs/validation-report.md`](./docs/validation-report.md) |
 | Film Bible persistence | Firestore, versioned, citable — `GET /api/projects/{id}/bible` |
 | Bible version attribution | Every shot cites its bible version — `GET /api/projects/{id}/shots` |
-| Parallel runtime research | Research Agent uses function calling — LLM decides queries, calls Parallel as an ADK tool, evaluates results, may issue follow-up searches (verified: 9 tool calls across 2 rounds for a samurai logline) — `agent_tool_call` events in the audit log |
+| Parallel runtime research | Research Agent uses function calling — LLM determines queries based on the logline, calls Parallel as an ADK tool, evaluates results, may issue follow-up searches (verified: 9 tool calls across 2 rounds for a samurai logline) — `agent_tool_call` events in the audit log |
 | Drift detection | Per-shot drift scores (face/age/beard/wardrobe/overall) — `POST /check-all` |
 | Closed-loop regeneration | Re-generation with drift-diagnosis context improved overall 0.85 → 0.90 — [`docs/regeneration-evidence.json`](./docs/regeneration-evidence.json) |
 | Autonomous loop | `POST /auto-regenerate` checks all shots, auto-regenerates those above the 0.25 drift threshold — `backend/api/shots.py` |
