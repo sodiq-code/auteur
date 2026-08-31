@@ -20,7 +20,7 @@ def health() -> dict[str, Any]:
     return {
         "status": "ok",
         "service": "auteur-backend",
-        "version": "0.2.0",
+        "version": "0.3.0-func-call",
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "partner_status": {
             "parallel_search": {
