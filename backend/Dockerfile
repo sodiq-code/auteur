@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Install Python deps (cached layer)
+# Cache bust — changes every build to invalidate the COPY layer
+ARG CACHEBUST=1
+RUN echo "Build cache bust: $CACHEBUST"
 COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
