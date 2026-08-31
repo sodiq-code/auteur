@@ -18,7 +18,7 @@ from typing import Any
 
 from google.genai import types
 
-from .adk_registry import research_agent, parallel_search_tool
+from .adk_registry import research_agent
 from ..integrations import parallel_search
 from ..integrations import gemini
 from ..bible import store
