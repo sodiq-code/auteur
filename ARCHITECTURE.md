@@ -132,9 +132,9 @@ two deviations that are now codified into the architecture:
 
 Day-1 validation (4 shots, 4 scenes, same character reference, mean consistency
 score **0.94**) confirms the project is GO on these substitutions. Full
-evidence: [`docs/validation-day-1-report.md`](docs/validation-day-1-report.md)
+evidence: [`docs/validation-report.md`](docs/validation-report.md)
 and the side-by-side image at
-[`docs/validation-day-1.png`](docs/validation-day-1.png).
+[`docs/validation.png`](docs/validation.png).
 
 ## Agentic Loop (blueprint Section 22.4)
 

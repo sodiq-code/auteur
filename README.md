@@ -37,10 +37,10 @@ One character reference image is generated from the logline. The Director Agent 
 
 **Mean overall: 0.925 · Verdict: GO** (drift threshold 0.25)
 
-One Film Bible. Four generations. One coherent character. Full evidence in [`docs/validation-day-1-report.md`](./docs/validation-day-1-report.md).
+One Film Bible. Four generations. One coherent character. Full evidence in [`docs/validation-report.md`](./docs/validation-report.md).
 
 <p align="center">
-  <img src="./docs/validation-day-1.png" alt="Side-by-side: character reference + four generated shot frames with consistency scores" width="860" />
+  <img src="./docs/validation.png" alt="Side-by-side: character reference + four generated shot frames with consistency scores" width="860" />
 </p>
 
 > **Methodology:** consistency scores are model-based evaluation scores produced by the Consistency Check Agent (`gemini-3.1-pro-preview` vision) using a fixed rubric across five dimensions (face identity, age appearance, beard/facial hair, wardrobe, overall). The `overall` score is produced independently by the model as part of the same JSON response (it is not a computed mean of the per-dimension scores). They are internal evaluation metrics, not a claim of objective perceptual similarity. Drift = 1.0 − overall. Accept threshold: overall ≥ 0.75.
@@ -140,22 +140,22 @@ Two endpoints close the loop:
 
 ### A real before/after
 
-Captured on the deployed backend via `POST /regenerate` with `use_drift_correction=true`. The first generation received only the Bible as context; the regeneration received the Bible **plus** the prior drift report as corrective context:
+Captured on the deployed backend via `POST /regenerate` with `use_drift_correction=true`. Shot 2 (Rocks, coastal dawn) scored the lowest overall (0.85) in the initial generation. The regeneration received the Bible **plus** the prior drift report as corrective context:
 
 ```
-SHOT 1 — FIRST GENERATION (Bible only)
-  face_identity: 0.70   age_appearance: 0.70   beard: 0.70   wardrobe: 0.95
+SHOT 2 — FIRST GENERATION (Bible only)
+  face_identity: 0.80   age_appearance: 0.90   beard: 0.90   wardrobe: 0.90
   overall: 0.85   drift: 0.15   verdict: ACCEPT
 
         │  POST /regenerate  (drift report → corrective context → Veo)
 
         ▼
-SHOT 1 — REGENERATION (Bible + drift diagnosis)
-  face_identity: 0.80   age_appearance: 0.90   beard: 0.90   wardrobe: 0.95
+SHOT 2 — REGENERATION (Bible + drift diagnosis)
+  face_identity: 0.90   age_appearance: 0.95   beard: 0.95   wardrobe: 0.90
   overall: 0.90   drift: 0.10   verdict: ACCEPT
 ```
 
-Face identity improved 0.70 → 0.80, age 0.70 → 0.90, beard 0.70 → 0.90. The corrective context directed Veo to prioritize the drifted dimensions from the character reference. Full evidence in [`docs/regeneration-evidence.json`](./docs/regeneration-evidence.json).
+Face identity improved 0.80 → 0.90, age 0.90 → 0.95, beard 0.90 → 0.95. The corrective context directed Veo to prioritize the drifted dimensions from the character reference. Full evidence in [`docs/regeneration-evidence.json`](./docs/regeneration-evidence.json).
 
 ## Why Parallel
 
@@ -192,7 +192,7 @@ The claims above are demonstrated, not asserted.
 
 | Capability | Evidence |
 |------------|---------|
-| 4-shot generation (Veo 3.1) | 4 clips, 4 scenes, mean consistency **0.925** — [`docs/validation-day-1-report.md`](./docs/validation-day-1-report.md) |
+| 4-shot generation (Veo 3.1) | 4 clips, 4 scenes, mean consistency **0.925** — [`docs/validation-report.md`](./docs/validation-report.md) |
 | Film Bible persistence | Firestore, versioned, citable — `GET /api/projects/{id}/bible` returns the typed schema |
 | Bible version attribution | Every shot cites its bible version — `GET /api/projects/{id}/shots` |
 | Parallel runtime research | Live Research panel streams queries + results — verified in the deployed UI |
@@ -380,7 +380,7 @@ auteur/
 │   ├── bible-schema.md             # Film Bible schema reference
 │   ├── demo-script.md              # 5-beat demo script
 │   ├── partner-integration.md      # Parallel Search integration notes
-│   └── validation-day-1-report.md  # cross-shot consistency validation
+│   └── validation-report.md  # cross-shot consistency validation
 ├── backend/
 │   ├── requirements.txt
 │   ├── main.py                     # FastAPI app + router mounting

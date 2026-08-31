@@ -192,7 +192,7 @@ Parallel Search result → Bible v{n} → Generation → Drift report
 > Day-1 validation note: blueprint specifies "Imagen 3"; on the live GCP
 > project, Imagen 3 is deprecated and `gemini-3-pro-image` is the
 > supported successor used to generate the persistent character reference
-> image. See `docs/validation-day-1-report.md` (mean cross-shot
+> image. See `docs/validation-report.md` (mean cross-shot
 > consistency 0.94, verdict GO).
 
 ---
@@ -247,4 +247,4 @@ the open-source strategy).
 - REST API exercised in the demo: [`docs/api-contract.md`](api-contract.md).
 - Bible schema shown in Beat 4: [`docs/bible-schema.md`](bible-schema.md).
 - Parallel Search visibility in Beat 3: [`docs/partner-integration.md`](partner-integration.md).
-- Day-1 validation evidence: [`docs/validation-day-1-report.md`](validation-day-1-report.md).
+- Day-1 validation evidence: [`docs/validation-report.md`](validation-report.md).

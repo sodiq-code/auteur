@@ -1,4 +1,4 @@
-# Auteur — Day 1 Validation Report
+# Auteur — Validation Report
 **Blueprint:** Section 32.2 / 50.2  **Date (UTC):** 2026-08-25T01:05:14.537176+00:00  **Project:** `auteur-506523` / `us-central1`
 ## Objective
 Validate that Veo 3.1 can produce visibly consistent characters across 4 shots in 4 scenes, given a character reference image.
@@ -30,7 +30,7 @@ Validate that Veo 3.1 can produce visibly consistent characters across 4 shots i
 | 4 | Standing outside by the sea holding a lantern | 0.95 | 0.95 | 0.95 | 0.95 | 0.95 |
 
 ## Artifacts
-- Side-by-side: `docs/validation-day-1.png`
+- Side-by-side: `docs/validation.png`
 - Manifest: `backend/validation/outputs/day1-manifest.json`
 - Character reference: `backend/validation/outputs/character_reference.png`
 - Clips: `backend/validation/outputs/shot_*.mp4`
