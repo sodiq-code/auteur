@@ -153,7 +153,7 @@ Act        call the chosen tool with structured args
    ↓
 Measure    Consistency Check Agent scores the output (drift 0.0–1.0)
    ↓
-Learn      if drift > threshold → re-generate with stricter bible injection
+Learn      if drift > threshold → re-generate with drift report as corrective context
            if user edits bible → propagate to affected shots (re-gen prompt)
    ↓
 Update     Bible version increments; shot list updates; scores logged (L6)

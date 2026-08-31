@@ -37,3 +37,13 @@ Validate that Veo 3.1 can produce visibly consistent characters across 4 shots i
 
 ## Decision
 - Project is **GO**. Proceed to Day 2.
+
+---
+
+## Methodology note
+
+Consistency scores are model-based evaluation signals produced by the Consistency Check Agent (`gemini-3.1-pro-preview` vision) using a fixed rubric across four diagnostic dimensions: face identity, age appearance, facial hair, and wardrobe. The evaluator also produces an independent holistic `overall` score; it is intentionally not calculated as the mean of the component scores.
+
+These are internal LLM-as-judge metrics, not claims of objective perceptual similarity or ground-truth identity matching. Because the Consistency Check Agent shares the Google model ecosystem with the generation pipeline, its scores should be interpreted as operational consistency signals rather than independent ground-truth measurements.
+
+The 0.75 acceptance threshold (drift = 1.0 − overall ≥ 0.25 triggers re-generation) is an engineering operating threshold for the prototype, not a statistically validated perceptual-quality boundary.

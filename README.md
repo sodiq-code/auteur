@@ -55,7 +55,7 @@ The loop is what makes this an agentic system: the Consistency Check Agent's dri
 | 3 | Interior (candlelight) | 0.95 | 0.95 | 0.95 | 0.95 | **0.95** |
 | 4 | Exterior (balcony, storm) | 0.95 | 0.95 | 0.95 | 0.95 | **0.95** |
 
-**Mean overall: 0.925 · Verdict: GO** (drift threshold 0.25)
+**Mean model-evaluated overall score: 0.925 · Verdict: GO** (drift threshold 0.25)
 
 One Film Bible. Four generations. One coherent character. Full evidence in [`docs/validation-report.md`](./docs/validation-report.md).
 
@@ -63,7 +63,7 @@ One Film Bible. Four generations. One coherent character. Full evidence in [`doc
   <img src="./docs/validation.png" alt="Side-by-side: character reference + four generated shot frames with consistency scores" width="860" />
 </p>
 
-> **Methodology:** consistency scores are model-based evaluation scores produced by the Consistency Check Agent (`gemini-3.1-pro-preview` vision) using a fixed rubric across five dimensions (face identity, age appearance, beard/facial hair, wardrobe, overall). The `overall` score is produced independently by the model as part of the same JSON response (it is not a computed mean of the per-dimension scores). They are internal evaluation metrics, not a claim of objective perceptual similarity. Drift = 1.0 − overall. Accept threshold: overall ≥ 0.75.
+> **Methodology:** Consistency scores are model-based evaluation signals produced by the Consistency Check Agent (`gemini-3.1-pro-preview` vision) using a fixed rubric across four diagnostic dimensions: face identity, age appearance, facial hair, and wardrobe. The evaluator also produces an independent holistic `overall` score in the same structured response; it is intentionally **not** calculated as the mean of the component scores. The component scores diagnose specific sources of drift, while `overall` represents the evaluator's holistic consistency judgment. These are internal LLM-as-judge metrics, not claims of objective perceptual similarity or ground-truth identity matching. Because the Consistency Check Agent shares the Google model ecosystem with the generation pipeline, its scores should be interpreted as operational consistency signals rather than independent ground-truth measurements. **Drift = 1.0 − overall.** Auteur accepts a shot when `overall ≥ 0.75`; this threshold is an engineering operating threshold for the prototype, not a statistically validated perceptual-quality boundary.
 
 ### A real before/after
 

@@ -116,7 +116,7 @@ body.
 
 ### 7. `POST /api/projects/{id}/shots/{shotId}/regenerate` — re-generate
 
-Re-runs generation with stricter context injection: the previous drift
+Re-runs generation with drift report as corrective context: the previous drift
 breakdown is appended to the Veo prompt so the model receives more specific
 guidance . Request body carries
 a `reason` (e.g., `"drift 0.34"` or a user note) which is logged in the
@@ -127,7 +127,7 @@ event trail for auditability.
 Returns the most recent drift report for the shot: the aggregate
 `drift_score` (0.0 = identical, 1.0 = totally drifted), the per-attribute
 breakdown (character / location / wardrobe / style), and the
-recommendation (`accept` or `re-generate`). The threshold defaults to 0.25
+recommendation (`accept` or `re-generate`). The threshold defaults to 0.25 (an engineering operating threshold, not a statistically validated perceptual-quality boundary)
 and tunes per project .
 
 ### 9. `POST /api/projects/{id}/assemble` — assemble final film

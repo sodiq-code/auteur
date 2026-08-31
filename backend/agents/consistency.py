@@ -17,7 +17,7 @@ from typing import Any
 
 from ..integrations import gemini
 
-DRIFT_THRESHOLD = 0.25  # blueprint §34.1 north-star metric
+DRIFT_THRESHOLD = 0.25  # engineering operating threshold (drift = 1 - overall; accept if overall >= 0.75)
 
 
 async def check_shot(
