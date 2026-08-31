@@ -123,7 +123,7 @@ The sample production is the pre-built 4-shot demo. If it needs
 re-seeding (e.g. after a Firestore wipe):
 
 ```bash
-bash infra/seed-demo.sh
+# Seeding is handled by the Director Agent at build time (see POST /api/projects/{id}/build-bible)
 ```
 
 This uploads the 4 Veo clips, character reference, and side-by-side image to

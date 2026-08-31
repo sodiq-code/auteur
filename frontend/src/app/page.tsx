@@ -70,7 +70,7 @@ export default function Page() {
         version: 1,
         created_at: new Date().toISOString(),
         logline: "An 1892 Scottish lighthouse keeper discovers a message in a bottle that changes his life.",
-        characters: [{ id: "c1", name: "Ewan MacAskill", age: 52, description: "A weathered, solitary Scottish lighthouse keeper.", voice_profile: "Gruff, sparse, Scottish brogue.", wardrobe: "Hand-waxed oilskin storm coat over a heavy-knit wool sweater.", reference_image_url: "/auteur/day1/character-reference.png", references: [demoRefs[2]] }],
+        characters: [{ id: "c1", name: "Ewan MacAskill", age: 52, description: "A weathered, solitary Scottish lighthouse keeper.", voice_profile: "Gruff, sparse, Scottish brogue.", wardrobe: "Hand-waxed oilskin storm coat over a heavy-knit wool sweater.", reference_image_url: "/auteur/demo/character-reference.png", references: [demoRefs[2]] }],
         locations: [{ id: "l1", name: "Skerryvore Lighthouse", description: "A remote stone lighthouse battered by the North Sea.", era: "1892", references: [demoRefs[0]] }],
         wardrobes: [{ id: "w1", character_id: "c1", garment: "Oilskin storm coat", fabric: "Waxed cotton", color: "Dark oil-black" }],
         voice_profiles: [{ id: "v1", character_id: "c1", voice_model: "gemini-3.1-flash-tts-preview", voice_name: "Charon", description: "Weary, deep, Scottish brogue" }],

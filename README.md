@@ -310,7 +310,6 @@ auteur/
     ├── cloudbuild.yaml
     ├── deploy_cloud_run.py         # backend deploy
     ├── deploy-unified.py           # unified (frontend + backend) deploy
-    └── seed-demo.sh                # sample-production seeding
 ```
 
 ---

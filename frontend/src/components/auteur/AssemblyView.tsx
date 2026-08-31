@@ -122,7 +122,7 @@ export function AssemblyView() {
             />
           ) : (
             <div className="grid h-full grid-cols-2 gap-0.5">
-              {["/auteur/day1/shot-1.png", "/auteur/day1/shot-2.png", "/auteur/day1/shot-3.png", "/auteur/day1/shot-4.png"].map((src, i) => (
+              {["/auteur/demo/shot-1.png", "/auteur/demo/shot-2.png", "/auteur/demo/shot-3.png", "/auteur/demo/shot-4.png"].map((src, i) => (
                 <div key={i} className="relative overflow-hidden">
                   <img src={src} alt={`Shot ${i + 1}`} className="h-full w-full object-cover opacity-60" />
                 </div>

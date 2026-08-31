@@ -72,7 +72,7 @@ export function ShotGridView({ onShotClick }: { onShotClick?: (shot: { id: numbe
                   id: shot.order,
                   label: `Shot ${shot.order}`,
                   scene: shot.description.slice(0, 60),
-                  frame: "/auteur/day1/shot-1.png", // fallback thumbnail
+                  frame: "/auteur/demo/shot-1.png", // fallback thumbnail
                   score: 0.9,
                   notes: shot.description,
                 })}

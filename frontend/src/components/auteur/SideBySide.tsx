@@ -30,14 +30,14 @@ interface SideBySideProps {
 }
 
 const DEFAULT_SHOTS: Shot[] = [
-  { id: 1, label: "Lamp Room", scene: "Interior, dusk", frame: "/auteur/day1/shot-1.png", score: 0.95 },
-  { id: 2, label: "Rocks", scene: "Coastal, dawn", frame: "/auteur/day1/shot-2.png", score: 0.85 },
-  { id: 3, label: "Interior", scene: "Candlelight", frame: "/auteur/day1/shot-3.png", score: 0.95 },
-  { id: 4, label: "Exterior", scene: "Balcony, dusk", frame: "/auteur/day1/shot-4.png", score: 0.95 },
+  { id: 1, label: "Lamp Room", scene: "Interior, dusk", frame: "/auteur/demo/shot-1.png", score: 0.95 },
+  { id: 2, label: "Rocks", scene: "Coastal, dawn", frame: "/auteur/demo/shot-2.png", score: 0.85 },
+  { id: 3, label: "Interior", scene: "Candlelight", frame: "/auteur/demo/shot-3.png", score: 0.95 },
+  { id: 4, label: "Exterior", scene: "Balcony, dusk", frame: "/auteur/demo/shot-4.png", score: 0.95 },
 ];
 
 export function SideBySide({
-  characterRef = "/auteur/day1/character-reference.png",
+  characterRef = "/auteur/demo/character-reference.png",
   shots = DEFAULT_SHOTS,
   meanOverall = 0.925,
   verdict = "GO",
