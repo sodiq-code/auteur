@@ -11,7 +11,6 @@ genuine agentic tool-use loop rather than a deterministic Python pipeline.
 from __future__ import annotations
 
 from google.adk import Agent
-from google.adk.tools import FunctionTool
 from google.genai import types
 
 _REASONING_CONFIG = types.GenerateContentConfig(temperature=0.2)
@@ -52,8 +51,6 @@ async def parallel_search(query: str) -> str:
     # Search API. The stub exists so ADK can generate the tool schema.
     return "[]"
 
-parallel_search_tool = FunctionTool.from_function(parallel_search)
-
 RESEARCH_INSTRUCTION = (
     "You are Auteur's Research Agent. Your job is to ground a film in real-world "
     "evidence by determining what factual information is needed and using the "
@@ -77,7 +74,7 @@ research_agent = Agent(
     model="gemini-3.1-pro-preview",
     instruction=RESEARCH_INSTRUCTION,
     generate_content_config=_REASONING_CONFIG,
-    tools=[parallel_search_tool],
+    tools=[parallel_search],
 )
 
 CONSISTENCY_INSTRUCTION = (
