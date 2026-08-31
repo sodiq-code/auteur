@@ -1,11 +1,11 @@
 # Auteur — End-to-End API Validation Report
-**Blueprint:** Section 32.2 / 50.3  
+
 **Date (UTC):** 2026-08-25T01:52:55.781499+00:00  
 **Project:** `auteur-506523`
 ## Objective
 Confirm all 5 production APIs (Parallel Search, image, Veo, TTS, Lyria) return successfully within budget (< $1) and reasonable latency (< 6 min), and that the bible-synthesis path produces a coherent Film Bible from the logline.
-## Models used (with blueprint substitutions)
-| Blueprint | Actual model | Region | Notes |
+## Models used (with substitutions)
+| Specified | Actual model | Region | Notes |
 |-----------|--------------|--------|-------|
 | Parallel Search | `https://api.parallel.ai/v1/search` | n/a | `x-api-key` header (NOT Bearer) |
 | Gemini 2.5 Pro (bible) | `gemini-3.1-pro-preview` | global | newest accessible Pro |

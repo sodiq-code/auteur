@@ -203,7 +203,7 @@ The claims above are demonstrated, not asserted.
 | Final MP4 assembly | ffmpeg concat + AAC audio mux, `has_audio=True` — `GET /api/projects/{id}/film` |
 | ADK agents | Three agents on Google Agent Development Kit — `backend/agents/adk_registry.py` |
 | Deployed end-to-end | Full pipeline on Cloud Run — `backend/tests/e2e_deployed_audio.py` (exit 0) |
-| Graceful degradation | Pipeline runs without PARALLEL_API_KEY — `backend/tests/test_fallback_no_parallel_key.py` (exit 0) |
+| Resilience | Pipeline runs without PARALLEL_API_KEY — `backend/tests/test_fallback_no_parallel_key.py` (exit 0) |
 | Smoke test | 12/12 endpoints OK — `backend/tests/test_api_smoke.py` |
 
 Run them: `python3 backend/tests/test_api_smoke.py && python3 backend/tests/test_assembly_audio.py && python3 backend/tests/test_fallback_no_parallel_key.py`
@@ -357,7 +357,7 @@ curl http://localhost:8000/api/health   # → {"status":"ok", ...}
 ```bash
 python3 backend/tests/test_api_smoke.py                # 12/12 endpoints
 python3 backend/tests/test_assembly_audio.py          # audio-mux unit test
-python3 backend/tests/test_fallback_no_parallel_key.py # graceful degradation
+python3 backend/tests/test_fallback_no_parallel_key.py # resilience test
 python3 backend/tests/e2e_deployed_audio.py           # deployed E2E
 ```
 
@@ -394,7 +394,7 @@ auteur/
 │   └── tests/
 │       ├── test_api_smoke.py                # 12-endpoint smoke test
 │       ├── test_assembly_audio.py           # audio-mux unit test (synthetic)
-│       ├── test_fallback_no_parallel_key.py # graceful-degradation test
+│       ├── test_fallback_no_parallel_key.py # resilience test
 │       └── e2e_deployed_audio.py            # deployed E2E verification
 ├── frontend/                       # Next.js 16 (App Router) — studio UI
 └── infra/

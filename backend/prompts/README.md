@@ -1,4 +1,4 @@
-# Auteur prompts (blueprint Section 25.3)
+# Auteur prompts 
 
 All prompts are version-controlled in this directory. Each prompt has:
 - System prompt (role + constraints)

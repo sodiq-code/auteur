@@ -34,7 +34,7 @@ curl -s -o /dev/null -w "%{http_code} %{{time_total}}s\n" https://auteur-app-jbk
 ```
 Expected: `200` in under 0.5s.
 
-### Sample production (safety net)
+### Sample production
 ```bash
 curl -s https://auteur-dev-jbkbgthudq-uc.a.run.app/api/demo | jq '.status, .consistency.verdict, .consistency.mean_overall'
 ```
@@ -119,7 +119,7 @@ gcloud run services update auteur-dev \
 
 ## Seeding the sample production
 
-The pre-rendered lighthouse-keeper 4-shot demo is the safety net. If it needs
+The sample production is the pre-built 4-shot demo. If it needs
 re-seeding (e.g. after a Firestore wipe):
 
 ```bash
@@ -132,9 +132,9 @@ endpoint reads from this; if it returns 404 or a skeleton, re-seed.
 
 ---
 
-## Fallback path (Parallel Search outage)
+## Resilience (Parallel Search outage)
 
-The Research Agent degrades gracefully if the Parallel Search API is
+The Research Agent  if the Parallel Search API is
 unavailable (key missing, rate-limited, or the endpoint is down):
 
 1. `parallel_search.search()` raises (key missing → `RuntimeError`; HTTP error
@@ -200,7 +200,7 @@ python3 backend/tests/test_api_smoke.py
 # 2. Audio-mux unit test (synthetic inputs, no API calls, no backend needed):
 python3 backend/tests/test_assembly_audio.py
 
-# 3. Graceful-degradation test (no PARALLEL_API_KEY needed):
+# 3. Resilience test (no PARALLEL_API_KEY needed):
 python3 backend/tests/test_fallback_no_parallel_key.py
 
 # 4. Deployed E2E test (runs against the live Cloud Run backend — takes ~4 min):
@@ -215,7 +215,7 @@ All four should exit 0. If any fails, do not mark the deploy as done.
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `PARALLEL_API_KEY` | No | Parallel Search API key. If unset, the Research Agent degrades gracefully (empty refs). |
+| `PARALLEL_API_KEY` | No | Parallel Search API key. If unset, the Research Agent  (empty refs). |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Yes | Path to the GCP service-account JSON key. |
 | `GCP_PROJECT_ID` | Yes | The GCP project ID (default `auteur-506523`). |
 | `GCP_LOCATION` | Yes | The region for Veo/Chirp/Lyria (default `us-central1`). |
