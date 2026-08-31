@@ -3,10 +3,15 @@ Auteur — ADK agent registry.
 
 Instantiates the three agents as Google Agent Development Kit (ADK) Agent
 objects with their models, instructions, and tool bindings.
+
+The Research Agent has the `parallel_search` function registered as an ADK
+FunctionTool — the LLM decides when and how to call it, making this a
+genuine agentic tool-use loop rather than a deterministic Python pipeline.
 """
 from __future__ import annotations
 
 from google.adk import Agent
+from google.adk.tools import FunctionTool
 from google.genai import types
 
 _REASONING_CONFIG = types.GenerateContentConfig(temperature=0.2)
@@ -29,11 +34,41 @@ director_agent = Agent(
     generate_content_config=_REASONING_CONFIG,
 )
 
+# The parallel_search function tool — registered on the Research Agent.
+# The LLM decides what query to pass and when to call it.
+# The actual execution is handled by the function-calling loop in research.py.
+async def parallel_search(query: str) -> str:
+    """Search the web for real-world references using the Parallel Search API.
+
+    Use this tool to find historical, cultural, architectural, fashion, and
+    musical references for the film. You can call this tool multiple times
+    with different queries.
+
+    Args:
+        query: The specific search query (e.g., "1920s Shanghai architecture")
+    """
+    # This is a stub — the actual execution happens in research_with_tools()
+    # which intercepts the function call and routes it to the real Parallel
+    # Search API. The stub exists so ADK can generate the tool schema.
+    return "[]"
+
+parallel_search_tool = FunctionTool.from_function(parallel_search)
+
 RESEARCH_INSTRUCTION = (
-    "You are Auteur's Research Agent. You take a research objective + queries, "
-    "call the Parallel Search API at runtime (x-api-key auth), cache the results "
-    "(24h TTL), and synthesize typed Reference objects. You are read-only — you "
-    "return references to the Director, who writes them into the Bible."
+    "You are Auteur's Research Agent. Your job is to ground a film in real-world "
+    "evidence by determining what factual information is needed and using the "
+    "parallel_search tool to find it. "
+    "\n\n"
+    "Before producing references, determine what factual information is "
+    "needed from the logline: historical era, location/setting, clothing/wardrobe, "
+    "cultural context, slang, architecture, lighting, music, and period details. "
+    "\n\n"
+    "Use parallel_search whenever external grounding would improve the film's "
+    "accuracy. You may issue multiple searches when the first result set is "
+    "insufficient. Do not invent factual references when relevant external "
+    "grounding is available. "
+    "\n\n"
+    "Return a brief summary of what you found after your searches are complete."
 )
 
 research_agent = Agent(
@@ -42,6 +77,7 @@ research_agent = Agent(
     model="gemini-3.1-pro-preview",
     instruction=RESEARCH_INSTRUCTION,
     generate_content_config=_REASONING_CONFIG,
+    tools=[parallel_search_tool],
 )
 
 CONSISTENCY_INSTRUCTION = (

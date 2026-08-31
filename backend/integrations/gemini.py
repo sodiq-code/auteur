@@ -73,3 +73,8 @@ async def flash_synthesize(prompt: str, temperature: float = 0.3) -> str:
     the entire agent stack.
     """
     return await pro_generate(prompt, temperature=temperature)
+
+
+def pro_client():
+    """Expose the client for function-calling use."""
+    return _pro_client()
