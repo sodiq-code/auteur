@@ -198,10 +198,10 @@ operations runbook .
 
 ## Cross-references
 
-- Bible shape: [`docs/bible-schema.md`](bible-schema.md
+- Bible shape: [`docs/bible-schema.md`](bible-schema.md)
 - Parallel Search integration (underlying `partner_status` probe):
-  [`docs/partner-integration.md`](partner-integration.md
+  [`docs/partner-integration.md`](partner-integration.md)
 - Per-API failure handling: see `docs/architecture.md`
   and `docs/partner-integration.md`.
 - Demo script that drives the UI through these endpoints:
-  [`docs/demo-script.md`](demo-script.md
+  [`docs/demo-script.md`](demo-script.md)

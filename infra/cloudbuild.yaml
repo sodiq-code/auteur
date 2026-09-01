@@ -1,4 +1,4 @@
-# Cloud Build pipeline — blueprint Section 31.4 / 29.2
+# Cloud Build pipeline.
 # Build the FastAPI + Next.js image and deploy to Cloud Run (dev).
 # Run: gcloud builds submit --config infra/cloudbuild.yaml --substitutions=_REGION=us-central1 .
 

@@ -218,7 +218,7 @@ The claims above are demonstrated, not asserted.
 | ADK agents | Three agents on Google Agent Development Kit — `backend/agents/adk_registry.py` |
 | Deployed end-to-end | Full pipeline on Cloud Run — `backend/tests/e2e_deployed_audio.py` (exit 0) |
 | Resilience | Pipeline runs without PARALLEL_API_KEY — `backend/tests/test_fallback_no_parallel_key.py` (exit 0) |
-| Smoke test | 12/12 endpoints OK — `backend/tests/test_api_smoke.py` |
+| Smoke test | 12/12 core endpoints OK — `backend/tests/test_api_smoke.py` (full API surface is 22 endpoints) |
 
 ---
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Auteur — Cloud Run deploy (one-command path with gcloud).
-# Blueprint Section 31.4 / 29.2.
 #
 # This is the recommended deploy path if you have gcloud installed locally.
 # The Python fallback (deploy_cloud_run.py) is for environments without gcloud.
