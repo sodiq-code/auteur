@@ -47,8 +47,8 @@ Bible v1 (Research Agent runs, Director builds the typed Bible, persists
 `bibles/{projectId}/1` in Firestore, returns the typed object). This is the
 main entry point — a single logline in, a typed Film Bible out.
 
-- **Request body:** `{ "logline": string }` (max 280 chars, Table 39
-  Row 2 — input sanitization; reject if it contains prompt-injection patterns).
+- **Request body:** `{ "logline": string }` (max 280 chars).
+  Input sanitization rejects prompt-injection patterns.
 - **Response 201:** `{ "projectId": string (UUIDv4), "bible": <Bible v1> }`
   (see `docs/bible-schema.md` for the `FilmBible` shape).
 - **Side effects:** writes `projects/{id}`, `bibles/{projectId}/1`,
@@ -108,8 +108,8 @@ body.
   event: generation_failed
   data: {"shotId": "...", "modality": "veo", "error": "..."}
   ```
-- **Why SSE:** Table 27, Row 13 — simple, HTTP-native, works with
-  Cloud Run, no WebSocket complexity.
+- **Why SSE:** simple, HTTP-native, works with Cloud Run, no WebSocket
+  complexity.
 - **Failure handling** : on Veo 5xx / quota 429,
   retry once with Veo Light; if still failing, stream a `generation_failed`
   event and fall back to the sample shot from the demo.
@@ -138,10 +138,9 @@ final.mp4`). Returns the public URL of the assembled film.
 
 ### 10. `POST /api/projects/{id}/share` — create share link
 
-Generates an 8-char random slug (2^48 entropy, Table 39, Row 6) and
-returns it. The slug is used by the public share view at `/share/{slug}`
-. The share page renders the assembled film, the
-Film Bible, and the side-by-side signature moment.
+Generates an 8-char random slug (2^48 entropy) and returns it. The slug is
+used by the public share view at `/share/{slug}`. The share page renders the
+assembled film, the Film Bible, and the side-by-side signature moment.
 
 ### 11. `GET /api/projects/{id}/export/bible` — export bible JSON
 
@@ -202,7 +201,7 @@ operations runbook .
 - Bible shape: [`docs/bible-schema.md`](bible-schema.md
 - Parallel Search integration (underlying `partner_status` probe):
   [`docs/partner-integration.md`](partner-integration.md
-- Per-API failure handling: Table 40 (see `docs/architecture.md`
-  and `docs/partner-integration.md`).
+- Per-API failure handling: see `docs/architecture.md`
+  and `docs/partner-integration.md`.
 - Demo script that drives the UI through these endpoints:
   [`docs/demo-script.md`](demo-script.md

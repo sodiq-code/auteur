@@ -6,7 +6,7 @@ Validate that Veo 3.1 can produce visibly consistent characters across 4 shots i
 - **Character reference image:** `gemini-3-pro-image` .
 - **Video generation:** `veo-3.1-fast-generate-001` .
 - **Reference mechanism:** `reference_images` with `reference_type=ASSET` — the Veo 3.1 persistent subject reference.
-- **Consistency check:** `gemini-3.1-pro-preview` (vision; Table 31 specifies Gemini 2.5 Pro — upgraded to the current Pro model, in region `global`).
+- **Consistency check:** `gemini-3.1-pro-preview` (vision; originally planned for Gemini 2.5 Pro — upgraded to the current Pro model, in region `global`).
 ## Shots
 | # | Scene | Status | Elapsed (s) | Size (bytes) |
 |---|-------|--------|-------------|--------------|

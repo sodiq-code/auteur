@@ -1,11 +1,10 @@
 # Auteur — Architecture
 
-> Component justification, data flow, and design decisions.
-> canonical component-justification reference; per Phase 15, every
-> component below answers: *what user value or competitive advantage does this
-> create?* Do not add components that do not answer this question.
+> Component justification, data flow, and design decisions. Every
+> component below answers: *what user value or competitive advantage does
+> this create?* Do not add components that do not answer this question.
 
-## Product Thesis (Section 21, Table 21)
+## Product Thesis
 
 Auteur is **AI cinema's memory**. Individual Veo 3.1, Chirp 3, Lyria 2, and
 Imagen 3 generations are already beautiful — the unsolved problem is that every
@@ -68,12 +67,11 @@ exact Veo duration.
 | Assembly | ffmpeg concatenation of the Veo clips + per-shot audio mux (Chirp voiceover at full volume + Lyria score at 25% as a bed, trimmed/padded to each shot's exact duration) → a single MP4 with AAC audio. | A deterministic operation that does not need an LLM. Handles three per-shot audio scenarios: mix (both assets), single (one asset), silent (neither — generates `anullsrc` silence). | No edit decisions, no color match, no localization — those are future roadmap. |
 | Export / Share | JSON bible export, CSV shot list export, public share link with 8-char random slug. | Judges can inspect the bible and view the film without an account . | No accounts, no auth — anonymous projects only . |
 
-## Memory Layers L1–L6 (Section 23.1, Table 32)
+## Memory Layers L1–L6
 
 Auteur's memory is layered to keep ephemeral, persistent, versioned, and
-historical data in the right store. Per Section 22.5, this layered
-persistence is what makes the system agentic rather than
-LLM-as-a-wrapper.
+historical data in the right store. This layered persistence is what
+makes the system agentic rather than LLM-as-a-wrapper.
 
 | Layer | Type | Storage | Content | Read | Write |
 |---|---|---|---|---|---|
@@ -89,7 +87,7 @@ The versioning discipline on L3 is what makes drift attributable
 beard color at v3; re-generation pending." Every generation cites its Bible
 version; every drift report cites its generation ID.
 
-## Tech Stack (Section 25.1, Table 27)
+## Tech Stack
 
 | Component | Chosen approach | Why | Alternative rejected |
 |---|---|---|---|
@@ -106,11 +104,11 @@ version; every drift report cites its generation ID.
 | Deployment | Cloud Run | Serverless, autoscaling, generous free tier | GKE (over-engineering) |
 | Partner integration | Parallel Search API | Intrinsic to agent value (grounded imagination) | Other partners |
 | Streaming | Server-Sent Events (SSE) | Simple, HTTP-native, works with Cloud Run | WebSocket (more complex) |
-| Auth | None (anonymous projects) | Anonymous projects | Firebase Auth (out of scope, Section 20) |
+| Auth | None (anonymous projects) | Anonymous projects | Firebase Auth (out of scope) |
 
 ## Model Note — Day-1 Validation Findings
 
-The specifies "Imagen 3" and "Veo 3.1 Light" in several places. On
+Early validation planned for "Imagen 3" and "Veo 3.1 Light". On
 the live GCP project `auteur-506523` (us-central1), Day-1 validation surfaced
 two deviations that are now codified into the architecture:
 
@@ -126,7 +124,7 @@ two deviations that are now codified into the architecture:
    - For iteration / development: use `veo-3.1-fast-generate-001` (supports
      ASSET reference images, fast enough for tight loops).
    - For final demo-quality renders: use `veo-3.1-generate-001` (Standard tier,
-     4K, best quality — Table 34, Row 4).
+     4K, best quality).
    - `veo-3.1-lite-generate-001` (the literal "Veo 3.1 Light" tier) is
      reserved for cases where reference images are *not* required.
 

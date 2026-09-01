@@ -1,11 +1,10 @@
 # Auteur — Partner Integration (Parallel Search API)
 
-> Parallel Search integration notes.
-> API), Table 37 (External API matrix), Table 40 Row 1 (failure handling),
-> Section 5.3 (anti-anti-pattern mitigation). This is the most important
-> external integration: per Rules §7B, Parallel Search **MUST** be called
-> at runtime, and the call site **must be visible to judges testing the
-> deployed URL**.
+> Parallel Search integration notes. Parallel Search is the
+> grounding layer of the Research Agent — every character, location,
+> wardrobe, voice, score motif, and style anchor in the Film Bible traces
+> back to a real URL it returned. Per the partner-track rules, the call
+> site must be visible in the deployed UI at runtime.
 
 ## Why this integration exists 
 
@@ -13,9 +12,8 @@ The Research Agent grounds creative decisions in real-world references via
 the Parallel Search API. Every character, location, wardrobe, voice, score
 motif, and style anchor in the Film Bible carries a `references[]` list of
 `Reference` objects — each with a `url`, `title`, `snippet`, and `modality`
-returned by Parallel. This is what makes the Bible *citable* (
-Section 23.3): every creative decision traces back to a real URL, not a
-hallucination.
+returned by Parallel. This is what makes the Bible *citable*: every
+creative decision traces back to a real URL, not a hallucination.
 
 Without this integration, Auteur would be a fluent liar — generating
 plausible-sounding but ungrounded period details. Parallel is the
@@ -23,9 +21,8 @@ ground-truth layer.
 
 ## The integration 
 
-Implemented in `backend/agents/research.py` (or `integrations/parallel_search.py`,
-per Section 31.1). The class below is reproduced verbatim from
-P668-P658.
+Implemented in `backend/agents/research.py` (with the HTTP client in
+`integrations/parallel_search.py`).
 
 ```python
 # agents/research_agent.py
@@ -134,8 +131,8 @@ to a Bible entry's `references[]` field.
 
 Caching serves two purposes:
 
-1. **Cost.** Per-call Parallel pricing (TBD; estimated $1–5/month at hackathon
-   scale, Table 42, Row 7). Caching avoids re-searching the same
+1. **Cost.** Per-call Parallel pricing (TBD; estimated $1–5/month at
+   hackathon scale). Caching avoids re-searching the same
    query when the Director loops back to the same modality.
 2. **Resilience.** If Parallel is down, the cached results are the first
    fallback (see Failure Handling below).
@@ -148,19 +145,20 @@ synthesizes them through `gemini-2.5-flash` with structured JSON output
 objects that match the `bible/schema.py` Pydantic model. This is what
 guarantees the Bible's `references[]` field is always well-typed.
 
-Why Gemini Flash and not Pro? Table 30, Row 2: "Faster, cheaper,
-sufficient for query formulation + result synthesis." Table 34,
-Row 2: Flash is the right model for search-synthesis; Pro would be overkill.
+Why Gemini Flash and not Pro? Flash is faster and cheaper, and sufficient
+for query formulation and result synthesis. Pro would be overkill for this
+step; it is reserved for the Director and Consistency Check agents where
+the reasoning load is heavier.
 
-## Visibility — the #1 anti-anti-pattern mitigation 
+## Visibility — the transparency guarantee
 
-> "The UI has a 'Research' panel that shows, in real-time, every Parallel
-> Search query and result. A judge testing the deployed URL can see the
-> partner API being called live. This is the #1 anti-anti-pattern
-> mitigation (Section 5.3)." — P670.
+> The UI has a Research panel that shows, in real time, every Parallel
+> Search query and result. A visitor testing the deployed URL can see
+> the partner API being called live — not a recorded video, not a
+> stubbed response.
 
-The Research Panel (`frontend/src/components/ResearchPanel.tsx`
-Section 30.2) renders:
+The Research Panel (`frontend/src/components/auteur/ResearchView.tsx`)
+renders:
 
 - Every query as it is sent (e.g., `▶ Searching: "1892 lighthouse keeper
   oilskin coat..."`).
@@ -218,8 +216,8 @@ Additional resilience layers:
 
 - Per `logline → research complete`: ~5 Parallel queries × ~$0.001 each =
   ~$0.01 + Gemini Flash synthesis ≈ $0.01 total .
-- Estimated monthly partner cost at normal usage: $1–5 (
-  Table 42, Row 7). Well within the $100 Google Cloud credit budget.
+- Estimated monthly partner cost at normal usage: $1–5.
+  Well within the $100 Google Cloud credit budget.
 
 ## Stress test 
 
