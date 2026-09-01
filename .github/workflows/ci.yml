@@ -1,0 +1,59 @@
+# Auteur — continuous integration
+#
+# Runs on every push to main and on every pull request. Keeps the
+# backend importable and the frontend type-checking, so a broken
+# commit never lands on main.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (Python · import smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install backend deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+      - name: Import smoke test
+        run: |
+          # The whole app must import cleanly without GCP creds in CI.
+          cd backend && python -c "from main import app; assert app.title == 'Auteur API'"
+
+  frontend:
+    name: Frontend (Next.js · lint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Bun
+        run: curl -fsSL https://bun.sh/install | bash -s -- --version latest
+      - name: Install deps
+        run: |
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
+          bun install --frozen-lockfile
+      - name: Lint
+        run: |
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
+          bun run lint

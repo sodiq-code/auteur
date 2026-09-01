@@ -36,7 +36,7 @@ CANONICAL_BIBLE: dict[str, Any] = {
         "description": "A weathered, solitary Scottish lighthouse keeper whose life is dictated by the clockwork precision of the light.",
         "voice_profile": "Gruff, sparse, with a thick Scottish brogue.",
         "wardrobe": "Hand-waxed oilskin storm coat over a heavy-knit wool sweater.",
-        "reference_image_url": "/auteur/day1/character-reference.png",
+        "reference_image_url": "/auteur/demo/character-reference.png",
     }],
     "locations": [{
         "id": "loc-skerryvore",
@@ -57,10 +57,10 @@ CANONICAL_BIBLE: dict[str, Any] = {
         {"id": "b4", "order": 4, "description": "He looks out to sea, transformed."},
     ],
     "shots": [
-        {"id": "shot-1", "order": 1, "label": "Lamp Room", "scene": "Interior, dusk · polishing the lens", "frame": "/auteur/day1/shot-1.png", "score": 0.95},
-        {"id": "shot-2", "order": 2, "label": "Rocks", "scene": "Coastal, dawn · the bottle", "frame": "/auteur/day1/shot-2.png", "score": 0.85},
-        {"id": "shot-3", "order": 3, "label": "Interior", "scene": "Candlelight · reading the message", "frame": "/auteur/day1/shot-3.png", "score": 0.95},
-        {"id": "shot-4", "order": 4, "label": "Exterior", "scene": "Balcony · stormy sea, dusk", "frame": "/auteur/day1/shot-4.png", "score": 0.95},
+        {"id": "shot-1", "order": 1, "label": "Lamp Room", "scene": "Interior, dusk · polishing the lens", "frame": "/auteur/demo/shot-1.png", "score": 0.95},
+        {"id": "shot-2", "order": 2, "label": "Rocks", "scene": "Coastal, dawn · the bottle", "frame": "/auteur/demo/shot-2.png", "score": 0.85},
+        {"id": "shot-3", "order": 3, "label": "Interior", "scene": "Candlelight · reading the message", "frame": "/auteur/demo/shot-3.png", "score": 0.95},
+        {"id": "shot-4", "order": 4, "label": "Exterior", "scene": "Balcony · stormy sea, dusk", "frame": "/auteur/demo/shot-4.png", "score": 0.95},
     ],
     "consistency": {
         "mean_overall": 0.925,
@@ -69,8 +69,8 @@ CANONICAL_BIBLE: dict[str, Any] = {
         "model": "gemini-3.1-pro-preview",
         "independent_vlm": 0.90,
     },
-    "side_by_side": "/auteur/day1/side-by-side.png",
-    "character_reference": "/auteur/day1/character-reference.png",
+    "side_by_side": "/auteur/demo/side-by-side.png",
+    "character_reference": "/auteur/demo/character-reference.png",
 }
 
 
