@@ -1,5 +1,5 @@
 """
-Auteur — Bible versioning (blueprint Section 23.3).
+Auteur — Bible versioning.
 
 Every user edit creates a new immutable Bible version (append-only). Every
 generation cites which Bible version it used, so drift is attributable:
@@ -31,5 +31,5 @@ async def get_latest_bible(project_id: str) -> Optional[FilmBible]:
 
 
 async def get_bible_at_version(project_id: str, version: int) -> Optional[FilmBible]:
-    """Citation lookup: which Bible version produced this shot? (blueprint 23.3)."""
+    """Citation lookup: which Bible version produced this shot?."""
     return await store.get_bible(project_id, version=version)

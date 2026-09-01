@@ -1,8 +1,8 @@
 """
-Auteur — public share view (blueprint Section 30.2 row 11).
+Auteur — public share view.
 
 GET /api/share/{slug} — public endpoint that returns the project state + bible
-+ film URL for anyone with the share slug. No auth required (blueprint Table 39
++ film URL for anyone with the share slug. No auth required
 row 6: 8-char random slug with ~2^48 entropy is the access control).
 """
 from __future__ import annotations
@@ -18,10 +18,10 @@ router = APIRouter(prefix="/share", tags=["share"])
 
 @router.get("/{slug}")
 async def get_shared_project(slug: str) -> dict[str, Any]:
-    """Get a project's public share view by its slug (blueprint Table 38 row 10).
+    """Get a project's public share view by its slug.
 
     Returns the project state + bible + film URL + shot list. Anyone with the
-    slug can view it (no auth — the slug IS the access control, blueprint Table
+    slug can view it (no auth — the slug IS the access control
     39 row 6).
     """
     project_id = await store.get_project_by_slug(slug)

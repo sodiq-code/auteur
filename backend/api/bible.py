@@ -1,5 +1,5 @@
 """
-Auteur — /api/projects/{id}/bible (blueprint Table 38 rows 3-4).
+Auteur — /api/projects/{id}/bible.
 
 GET  /api/projects/{id}/bible                       — get current bible
 PATCH /api/projects/{id}/bible/entries/{entryId}    — edit a bible entry (creates a new version)
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/projects/{project_id}/bible", tags=["bible"])
 
 @router.get("")
 async def get_bible(project_id: str) -> dict[str, Any]:
-    """Get the current (latest) bible version (blueprint Table 38 row 3)."""
+    """Get the current (latest) bible version."""
     project = await store.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="project not found")
@@ -39,7 +39,7 @@ class EditEntryRequest(BaseModel):
 
 @router.patch("/entries/{entry_id}")
 async def edit_entry(project_id: str, entry_id: str, req: EditEntryRequest) -> dict[str, Any]:
-    """Edit a bible entry — creates a new immutable version (blueprint Table 38 row 4, 23.3)."""
+    """Edit a bible entry — creates a new immutable version."""
     bible = await versioning.get_latest_bible(project_id)
     if not bible:
         raise HTTPException(status_code=404, detail="no bible to edit")
@@ -73,7 +73,7 @@ async def edit_entry(project_id: str, entry_id: str, req: EditEntryRequest) -> d
     if not mutated:
         raise HTTPException(status_code=404, detail=f"entry {entry_id} or field {req.field} not found")
 
-    # Persist as a new version (blueprint 23.3 — append-only, immutable snapshots)
+    # Persist as a new version
     new_bible = bible.bump_version()
     await versioning.commit_bible_version(project_id, new_bible)
     return {

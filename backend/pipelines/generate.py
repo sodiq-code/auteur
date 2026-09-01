@@ -1,5 +1,5 @@
 """
-Auteur — generation pipeline (blueprint Section 32.2 Day 7).
+Auteur — generation pipeline.
 
 Orchestrates Veo 3.1 (video) + Chirp 3 (voice) + Lyria 2 (music) per shot,
 with the Film Bible injected as context. Each modality call is independent
@@ -7,7 +7,7 @@ and runs concurrently; results are collected + logged.
 
 The pipeline is called by POST /api/projects/{id}/shots/{shotId}/generate.
 
-Definition of done (blueprint P854): shot list → 4 shots generate end-to-end
+Definition of done: shot list → 4 shots generate end-to-end
 in UI. For a single shot: Veo + Chirp + Lyria all complete within ~90s.
 """
 from __future__ import annotations
@@ -64,7 +64,7 @@ async def generate_shot(
     tts_line = _build_tts_line(shot, bible)
     lyria_prompt = _build_lyria_prompt(bible)
 
-    # Run all modalities concurrently (blueprint Table 36 — they're independent)
+    # Run all modalities concurrently
     tasks = {}
     if "veo" in shot.modality_calls:
         tasks["veo"] = asyncio.create_task(
@@ -116,11 +116,11 @@ async def generate_shot(
 
 
 # --------------------------------------------------------------------------- #
-# Per-modality runners (each catches its own errors — blueprint Table 40)
+# Per-modality runners (each catches its own errors)
 # --------------------------------------------------------------------------- #
 
 async def _run_veo(project_id: str, shot: ShotSpec, prompt: str, char_ref: bytes | None) -> dict:
-    """Veo 3.1 video generation (blueprint Table 40 row 2-3)."""
+    """Veo 3.1 video generation."""
     t0 = time.time()
     try:
         mp4 = await veo.generate_video(
@@ -163,7 +163,7 @@ async def _run_veo(project_id: str, shot: ShotSpec, prompt: str, char_ref: bytes
 
 
 async def _run_chirp(project_id: str, shot: ShotSpec, line: str) -> dict:
-    """Chirp 3 / Gemini TTS voiceover (blueprint Table 40 row 4)."""
+    """Chirp 3 / Gemini TTS voiceover."""
     t0 = time.time()
     try:
         pcm = await chirp.generate_voiceover(line, voice_name="Charon")
@@ -207,7 +207,7 @@ async def _run_chirp(project_id: str, shot: ShotSpec, line: str) -> dict:
 
 
 async def _run_lyria(project_id: str, shot: ShotSpec, prompt: str) -> dict:
-    """Lyria 2 score (blueprint Table 40 row 5).
+    """Lyria 2 score.
 
     Includes retry logic: if the first prompt fails (content filter), retries
     with a progressively simpler/safer prompt.

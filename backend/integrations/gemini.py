@@ -1,5 +1,5 @@
 """
-Auteur — Gemini LLM client (blueprint Section 25, the Director + Consistency agent).
+Auteur — Gemini LLM client (Director + Consistency agent).
 
 All reasoning uses gemini-3.1-pro-preview (global region) — the newest accessible
 Pro model for both text and vision. No Gemini 2.x models are used at runtime.

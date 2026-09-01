@@ -1,7 +1,7 @@
 # Auteur — continuous integration
 #
 # Runs on every push to main and on every pull request. Keeps the
-# backend importable and the frontend type-checking, so a broken
+# backend importable and the frontend linting clean, so a broken
 # commit never lands on main.
 
 name: CI
@@ -30,9 +30,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
       - name: Import smoke test
+        # Import the FastAPI app from the repo root so relative imports
+        # (`from .api import ...`) resolve. The app gracefully falls back
+        # to in-memory storage when GCP creds are absent, so no secrets
+        # are needed in CI.
         run: |
-          # The whole app must import cleanly without GCP creds in CI.
-          cd backend && python -c "from main import app; assert app.title == 'Auteur API'"
+          python -c "from backend.main import app; assert app.title, 'no title'; print('app.title:', app.title)"
 
   frontend:
     name: Frontend (Next.js · lint)
@@ -42,18 +45,10 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "20"
-      - name: Install Bun
-        run: curl -fsSL https://bun.sh/install | bash -s -- --version latest
+          bun-version: latest
       - name: Install deps
-        run: |
-          export BUN_INSTALL="$HOME/.bun"
-          export PATH="$BUN_INSTALL/bin:$PATH"
-          bun install --frozen-lockfile
+        run: bun install
       - name: Lint
-        run: |
-          export BUN_INSTALL="$HOME/.bun"
-          export PATH="$BUN_INSTALL/bin:$PATH"
-          bun run lint
+        run: bun run lint

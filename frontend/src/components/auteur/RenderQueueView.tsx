@@ -1,5 +1,5 @@
 /**
- * RenderQueueView — blueprint Section 30.2 row 6.
+ * RenderQueueView row 6.
  * Live status of Veo/Chirp/Lyria calls per shot.
  *
  * Fetches real shots from GET /api/projects/{id}/shots, then calls

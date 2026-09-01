@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Auteur — backend smoke test (blueprint Section 31.3).
+Auteur — backend smoke test.
 
 Runs against a live uvicorn instance (start it first with
 `uvicorn backend.main:app --port 8000`). Exercises every endpoint in the
-Table 38 API surface (stubs included) + the health check.
+API surface (stubs included) + the health check.
 
 Usage:
   uvicorn backend.main:app --port 8000 &

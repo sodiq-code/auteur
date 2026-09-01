@@ -349,10 +349,3 @@ See [`docs/api-contract.md`](./docs/api-contract.md) for the full contract.
 ## License
 
 MIT — see [`LICENSE`](./LICENSE).
-
-## Links
-
-- **Repo:** <https://github.com/sodiq-code/auteur>
-- **Studio UI:** <https://auteur-app-jbkbgthudq-uc.a.run.app>
-- **Demo video:** <https://youtu.be/iVlglr66YXw>
-- **Agentic Cinema:** <https://agentic-cinema.devpost.com/>

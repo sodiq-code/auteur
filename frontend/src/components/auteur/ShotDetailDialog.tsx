@@ -1,5 +1,5 @@
 /**
- * ShotDetailDialog — blueprint Section 30.2 row 8.
+ * ShotDetailDialog row 8.
  * Click a shot in the grid to see full detail: video frame, bible refs,
  * consistency report, re-generate button.
  */

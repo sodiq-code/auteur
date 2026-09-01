@@ -1,12 +1,12 @@
 """
-Auteur — /api/projects/{id}/shots (blueprint Table 38 rows 5-8).
+Auteur — /api/projects/{id}/shots.
 
 GET  /api/projects/{id}/shots                          — get shot list
 POST /api/projects/{id}/shots/{shotId}/generate        — trigger generation (SSE)
 POST /api/projects/{id}/shots/{shotId}/regenerate      — re-generate
 GET  /api/projects/{id}/shots/{shotId}/consistency     — get drift report
 
-The generate endpoint streams progress via SSE (blueprint Table 38 row 6). For
+The generate endpoint streams progress via SSE. For
 the skeleton, generation returns a 202 (accepted) + generationId — the full SSE
 pipeline comes in the generation-pipeline task.
 """
@@ -25,7 +25,7 @@ router = APIRouter(prefix="/projects/{project_id}/shots", tags=["shots"])
 
 @router.get("")
 async def get_shots(project_id: str) -> dict[str, Any]:
-    """Get the shot list (blueprint Table 38 row 5)."""
+    """Get the shot list."""
     project = await store.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="project not found")
@@ -39,7 +39,7 @@ class GenerateRequest(BaseModel):
 
 @router.post("/{shot_id}/generate")
 async def generate_shot(project_id: str, shot_id: str, req: GenerateRequest) -> dict[str, Any]:
-    """Trigger generation for a shot (blueprint Table 38 row 6).
+    """Trigger generation for a shot.
 
     Runs the real generation pipeline: Veo 3.1 (video) + Chirp 3 (voice) +
     Lyria 2 (music) concurrently, with the Film Bible injected as context.
@@ -210,7 +210,7 @@ async def auto_regenerate_drifted_shots(project_id: str) -> dict[str, Any]:
 
 @router.get("/{shot_id}/consistency")
 async def get_consistency(project_id: str, shot_id: str) -> dict[str, Any]:
-    """Get the drift report for a shot (blueprint Table 38 row 8).
+    """Get the drift report for a shot.
 
     If the consistency check hasn't been run yet, runs it now.
     Returns the drift score + per-attribute breakdown + recommendation.
@@ -228,7 +228,7 @@ async def get_consistency(project_id: str, shot_id: str) -> dict[str, Any]:
 
 @router.post("/{shot_id}/consistency")
 async def run_consistency(project_id: str, shot_id: str) -> dict[str, Any]:
-    """Run the Consistency Check Agent on a shot (blueprint Day 9).
+    """Run the Consistency Check Agent on a shot.
 
     Extracts a frame from the generated Veo clip, compares it to the character
     reference via Gemini 3.1 Pro vision, returns the drift score + breakdown.
@@ -246,7 +246,7 @@ async def run_consistency(project_id: str, shot_id: str) -> dict[str, Any]:
 
 @router.post("/check-all")
 async def check_all_shots(project_id: str) -> dict[str, Any]:
-    """Run the Consistency Check Agent on ALL shots (blueprint Day 9 DoD).
+    """Run the Consistency Check Agent on ALL shots.
 
     Returns a summary with per-shot drift scores + the mean overall + the verdict.
     """

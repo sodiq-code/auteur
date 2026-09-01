@@ -1,5 +1,5 @@
 /**
- * ShotListView — blueprint Section 30.2 row 5.
+ * ShotListView row 5.
  * Table of 4 shots with bible refs; "Generate" button per shot.
  *
  * Fetches real shots from GET /api/projects/{id}/shots (created by build-bible).

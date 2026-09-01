@@ -1,7 +1,7 @@
 """
-Auteur — Veo 3.1 video generation client (blueprint Section 25).
+Auteur — Veo 3.1 video generation client.
 
-Model: veo-3.1-fast-generate-001 (blueprint "Veo 3.1" — the Lite tier does NOT
+Model: veo-3.1-fast-generate-001 — the Lite tier does NOT
 support reference_images, so the Fast tier is used for iteration; Standard for
 final renders). us-central1 region.
 
@@ -21,7 +21,7 @@ from google.genai import types
 
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "auteur-506523")
 VEO_REGION = "us-central1"
-VEO_MODEL_FAST = "veo-3.1-fast-generate-001"     # iteration (blueprint "Veo 3.1 Light")
+VEO_MODEL_FAST = "veo-3.1-fast-generate-001"     # iteration
 VEO_MODEL_STANDARD = "veo-3.1-generate-001"       # final demo renders
 
 _CLIENT = None

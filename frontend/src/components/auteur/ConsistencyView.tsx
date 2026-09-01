@@ -1,5 +1,5 @@
 /**
- * ConsistencyView — blueprint Section 30.2 row 9.
+ * ConsistencyView row 9.
  * Drift dashboard with per-shot breakdown + working Accept/Re-generate.
  *
  * The Accept button marks a shot as approved (moves to assembly-ready).

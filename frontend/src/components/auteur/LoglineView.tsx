@@ -1,5 +1,5 @@
 /**
- * LoglineView — blueprint Section 30.2 row 2.
+ * LoglineView row 2.
  * One input field; example loglines; "Build my film" button.
  *
  * Polish:

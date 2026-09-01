@@ -1,5 +1,5 @@
 """
-Auteur — canonical demo endpoint (blueprint Section 32.2 Day 11, P872-P878).
+Auteur — canonical demo endpoint.
 
 GET /api/demo — returns the pre-rendered canonical 4-shot demo (the safety net
 for demo day). The demo is the Day-1 validation: the lighthouse-keeper film
@@ -7,9 +7,9 @@ with 4 Veo 3.1 clips held consistent via the ASSET character reference.
 
 This is the DEFAULT landing experience: visitors see the demo instantly without
 needing to generate anything. The "Watch it live" CTA triggers a fresh Veo
-generation to prove the loop is real (blueprint Section 28.1 demo-safe path).
+generation to prove the loop is real.
 
-DoD (blueprint P878): deployed URL loads canonical demo in under 5 seconds.
+Definition of done: deployed URL loads canonical demo in under 5 seconds.
 """
 from __future__ import annotations
 
@@ -76,7 +76,7 @@ CANONICAL_BIBLE: dict[str, Any] = {
 
 @router.get("")
 async def get_demo() -> dict[str, Any]:
-    """Return the canonical pre-rendered demo (blueprint Day 11, P873-P876).
+    """Return the canonical pre-rendered demo.
 
     This is the DEFAULT landing experience — visitors see the demo instantly.
     The demo is pre-rendered (not generated on-demand) so it loads in < 1s.

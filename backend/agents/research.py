@@ -1,5 +1,5 @@
 """
-Auteur — Research Agent (Section 22.2, Table 30).
+Auteur — Research Agent.
 
 Grounds creative decisions in real-world references via the Parallel Search API
 (the partner integration, called at runtime as an ADK function tool).

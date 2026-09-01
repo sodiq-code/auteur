@@ -1,14 +1,14 @@
 """
-Auteur — Director Agent (blueprint Section 22.1, Table 29).
+Auteur — Director Agent.
 
 Top-level orchestrator. Receives a logline, coordinates the Research Agent to
 ground creative decisions, builds a typed Film Bible, generates a shot list
 with explicit bible references per shot.
 
-Model: gemini-3.1-pro-preview (global region) — blueprint "Gemini 2.5 Pro",
+Model: gemini-3.1-pro-preview (global region),
 upgraded to the newest accessible Pro model.
 
-Authority (blueprint Table 29 row 7): can call all tools; cannot delete user
+Authority: can call all tools; cannot delete user
 data; cannot call Parallel Search directly (delegates to Research Agent).
 """
 from __future__ import annotations
@@ -23,7 +23,7 @@ from ..bible.schema import FilmBible, Project, ShotSpec
 
 
 async def build_bible(project: Project) -> FilmBible:
-    """Logline -> Bible v1 in Firestore (blueprint Day 6 definition of done).
+    """Logline -> Bible v1 in Firestore.
 
     1. Run Research Agent (Parallel Search) to ground the bible in real references.
     2. Call Gemini 3.1 Pro to synthesize the bible from logline + references.
@@ -45,7 +45,7 @@ async def build_bible(project: Project) -> FilmBible:
     # 3. Persist (append-only versioned)
     await versioning.commit_bible_version(project.id, bible)
 
-    # 4. Generate the shot list from the story beats (blueprint Day 7 prerequisite)
+    # 4. Generate the shot list from the story beats
     # Only generate if no shots exist yet (avoid duplicates on re-build)
     existing_shots = await store.get_shots(project.id)
     if not existing_shots:
@@ -133,7 +133,7 @@ async def _synthesize_bible(logline: str, refs: list) -> FilmBible:
             voice_profile=c.get("voice_profile", ""),
             wardrobe=c.get("wardrobe", ""),
         )
-        # Generate a character reference image for this character (blueprint Section 22.1 step 3)
+        # Generate a character reference image for this character
         try:
             char_prompt = (
                 f"Cinematic portrait photograph of {char.name}, {char.description}. "

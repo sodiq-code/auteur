@@ -1,5 +1,5 @@
 /**
- * ShotGridView — blueprint Section 30.2 row 7.
+ * ShotGridView row 7.
  * Fetches REAL shots from the backend + shows actual Veo clips.
  * The SideBySide component shows the pre-rendered demo as the signature moment.
  * Individual shot cards show the REAL generated clips via GET /shots/{id}/video.

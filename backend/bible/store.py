@@ -1,5 +1,5 @@
 """
-Auteur — Firestore CRUD for projects + bibles (blueprint Section 24 / Table 33).
+Auteur — Firestore CRUD for projects + bibles.
 
 Collections:
   projects/{projectId}                         — project state
@@ -123,7 +123,7 @@ async def update_project_status(project_id: str, status: str, bible_version: Opt
 # --------------------------------------------------------------------------- #
 
 async def save_bible(project_id: str, bible: FilmBible) -> FilmBible:
-    """Persist a Bible as an immutable versioned snapshot (blueprint 23.3)."""
+    """Persist a Bible as an immutable versioned snapshot."""
     key = f"{project_id}_{bible.version}"
     # Also store project_id + version as top-level fields for simple queries
     db = _get_firestore()
@@ -248,13 +248,13 @@ async def get_all_generations(project_id: str) -> list[dict[str, Any]]:
 
 
 # --------------------------------------------------------------------------- #
-# Share links (slug → project_id, blueprint Table 33 + Table 39 row 7)
+# Share links (slug → project_id)
 # --------------------------------------------------------------------------- #
 
 async def create_share_link(project_id: str) -> str:
     """Create a public share slug for a project. Returns the slug."""
     import secrets
-    slug = secrets.token_urlsafe(6)  # 8-char random slug (~2^48 entropy, blueprint Table 39 row 7)
+    slug = secrets.token_urlsafe(6)  # 8-char random slug (~2^48 entropy,)
     _SHARE_LINKS[slug] = project_id
     await log_event(project_id, "share_link_created", {"slug": slug})
     return slug
@@ -266,7 +266,7 @@ async def get_project_by_slug(slug: str) -> str | None:
 
 
 # --------------------------------------------------------------------------- #
-# Search cache (24h TTL — blueprint Table 28 row 2 / 24.4)
+# Search cache (24h TTL / 24.4)
 # --------------------------------------------------------------------------- #
 
 CACHE_TTL = timedelta(hours=24)
@@ -308,7 +308,7 @@ async def cache_set_search(project_id: str, query: str, results: list[dict]) -> 
 
 
 # --------------------------------------------------------------------------- #
-# Event log (audit + demo narrative — blueprint Table 33 / 24.3)
+# Event log (audit + demo narrative / 24.3)
 # --------------------------------------------------------------------------- #
 
 async def log_event(project_id: str, event_type: str, payload: Optional[dict] = None) -> None:

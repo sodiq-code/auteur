@@ -1,5 +1,5 @@
 """
-Auteur — music / score client (blueprint "Lyria 2").
+Auteur — music / score client.
 
 Model: lyria-002 (via the Vertex :predict REST endpoint, us-central1).
 Needs SPECIFIC prompts — vague prompts return 500 "Could not generate audio"

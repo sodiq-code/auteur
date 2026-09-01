@@ -1,8 +1,8 @@
 """
-Auteur — /api/health (blueprint Table 38 row 14).
+Auteur — /api/health.
 
 Returns {status, partner_status, model_status}. This is the Cloud Run health
-endpoint — smoke-tested after every deploy (blueprint §31.4).
+endpoint — smoke-tested after every deploy.
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def health() -> dict[str, Any]:
             "parallel_search": {
                 "configured": bool(os.environ.get("PARALLEL_API_KEY")),
                 "endpoint": "https://api.parallel.ai/v1/search",
-                "auth": "x-api-key",  # NOT Bearer (blueprint pseudo-code was wrong)
+                "auth": "x-api-key",  # NOT Bearer
                 "track": "Parallel partner track",
             },
         },

@@ -1,5 +1,5 @@
 """
-Auteur — assembly pipeline (blueprint Section 32.2 Day 8).
+Auteur — assembly pipeline.
 
 Assembles the generated Veo clips into a single MP4 via ffmpeg concatenation,
 then muxes the per-shot Chirp voiceover + Lyria score as the audio track.
@@ -11,7 +11,7 @@ For each shot:
      trimmed/padded to exactly the Veo clip duration.
 Concatenate all video segments + all audio segments, then mux into the final MP4.
 
-Definition of done (blueprint P859): shot grid shows 4 thumbnails; assembly
+Definition of done: shot grid shows 4 thumbnails; assembly
 produces a single MP4 with synchronized audio (voiceover + score).
 """
 from __future__ import annotations
@@ -35,7 +35,7 @@ DEFAULT_SHOT_DURATION = 8.0 # Veo clips are 8s (duration_seconds=8 in generate.p
 
 
 async def assemble_film(project_id: str) -> dict[str, Any]:
-    """Assemble all generated shots into a single MP4 with audio (blueprint Day 8 DoD).
+    """Assemble all generated shots into a single MP4 with audio.
 
     Pipeline:
       1. Retrieve the generated Veo clips (video) + Chirp voiceover + Lyria score

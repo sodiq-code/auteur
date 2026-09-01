@@ -1,5 +1,5 @@
 /**
- * ShareView — blueprint Section 30.2 row 11 + Day 12 (UX polish).
+ * ShareView row 11 + Day 12 (UX polish).
  * Side-by-side signature moment + the user's film + bible summary.
  */
 "use client";
@@ -81,7 +81,7 @@ export function ShareView() {
         </div>
       )}
 
-      {/* the signature SideBySide moment (blueprint Section 30.5) */}
+      {/* the signature SideBySide moment */}
       <div className="auteur-rise mb-6" style={{ animationDelay: "0.25s" }}>
         <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
           <Eye className="h-3.5 w-3.5 text-amber-400" />

@@ -1,15 +1,15 @@
 """
-Auteur — Parallel Search integration (blueprint Section 26.3, the partner track).
+Auteur — Parallel Search integration (the partner track).
 
 This is the MOST IMPORTANT integration. Per Rules §7B, Parallel Search MUST be
 called at runtime. The call site is visible to judges in the deployed UI's
 Research panel (every query + result streams live).
 
-Auth correction: the blueprint's Section 26.3 pseudo-code uses
+Auth correction: the original pseudo-code uses
 `Authorization: Bearer {key}` — the REAL API uses `x-api-key: {key}`.
 
 The Research Agent calls this module; results are cached in Firestore (24h TTL,
-blueprint Table 28 row 2) and synthesized by Gemini Flash into typed References.
+and synthesized by Gemini Flash into typed References.
 """
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ async def search(
             PARALLEL_ENDPOINT,
             headers={
                 "Content-Type": "application/json",
-                "x-api-key": api_key,  # NOT Authorization: Bearer (blueprint pseudo-code was wrong)
+                "x-api-key": api_key,  # NOT Authorization: Bearer
             },
             json={"objective": objective, "search_queries": queries},
         )

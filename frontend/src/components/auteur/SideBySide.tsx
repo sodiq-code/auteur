@@ -1,9 +1,9 @@
 /**
- * SideBySide — blueprint Section 30.5, the signature moment.
+ * SideBySide, the signature moment.
  *
  * Shows one character reference + 4 generated shot frames side-by-side,
  * demonstrating that Veo 3.1 holds the character consistent across scenes.
- * This is the "impossible to forget" visual proof (blueprint Section 17).
+ * This is the "impossible to forget" visual proof.
  *
  * Used on: Landing (hero), Share (public showcase), Grid (detail).
  */

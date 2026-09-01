@@ -1,5 +1,5 @@
 """
-Auteur — image generation client (blueprint "Imagen 3").
+Auteur — image generation client.
 
 Model: gemini-3-pro-image (Imagen 3 deprecated on the project; gemini-3-pro-image
 is the newest accessible Google Cloud image model — Pro tier, 3.x generation).

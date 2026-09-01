@@ -1,14 +1,14 @@
 """
-Auteur — Consistency Check Agent (blueprint Section 22.3, Table 31).
+Auteur — Consistency Check Agent.
 
 Verifies that each generated shot matches the Film Bible references. Produces a
 drift score per shot (0.0 = totally different, 1.0 = identical). Flags drift
 above threshold; suggests re-generation.
 
 Model: gemini-3.1-pro-preview with vision (global region). Stateless; operates
-per-shot (no project memory — blueprint Table 31 row 6).
+per-shot (no project memory).
 
-Authority (blueprint Table 31 row 7): READ-ONLY. Cannot modify shots; only flags.
+Authority: READ-ONLY. Cannot modify shots; only flags.
 """
 from __future__ import annotations
 

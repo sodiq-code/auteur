@@ -1,5 +1,5 @@
 /**
- * AssemblyView — blueprint Section 30.2 row 10.
+ * AssemblyView row 10.
  * Final film preview + export buttons (MP4, Bible JSON, Shot CSV); share link.
  *
  * Calls POST /api/projects/{id}/assemble to run ffmpeg concatenation on the

@@ -1,7 +1,7 @@
 """
-Auteur — FastAPI application (blueprint Section 26.2, Table 38).
+Auteur — FastAPI application.
 
-Mounts all API routers. The full API surface (14 endpoints per Table 38) is
+Mounts all API routers. The full API surface (14 endpoints) is
 scaffolded; the heavy implementations (generation pipeline, assembly,
 consistency) come in their respective tasks.
 

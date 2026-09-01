@@ -1,5 +1,5 @@
 """
-Auteur — voice / TTS client (blueprint "Chirp 3").
+Auteur — voice / TTS client.
 
 Model: gemini-3.1-flash-tts-preview (the Gemini 3.1 TTS model via
 generate_content with response_modalities=['AUDIO'] + speech_config with a

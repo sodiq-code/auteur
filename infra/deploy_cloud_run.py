@@ -11,7 +11,7 @@ Pipeline:
   4. Poll the Cloud Build op until the image is pushed.
   5. Create the Cloud Run service (auteur-dev) pointing at the image.
   6. Poll the Cloud Run op until the service is ready.
-  7. curl the deployed /api/health URL — must return 200 (blueprint DoD P830).
+  7. curl the deployed /api/health URL — must return 200.
 
 Usage:
   source .env
@@ -382,8 +382,8 @@ def main() -> int:
     svc_op = deploy_service(args.service, image, args.region)
     uri = poll_service_op(svc_op, max_wait=300)
 
-    # 5. Health check (blueprint DoD P830)
-    print("\n[5/5] Health check (blueprint DoD P830)")
+    # 5. Health check
+    print("\n[5/5] Health check")
     health_url = f"{uri}/api/health"
     print(f"  curl {health_url}")
     ok = False

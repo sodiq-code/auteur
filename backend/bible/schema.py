@@ -1,5 +1,5 @@
 """
-Auteur — Film Bible Pydantic schemas (blueprint Section 23.2).
+Auteur — Film Bible Pydantic schemas.
 
 The Film Bible is the typed, versioned, citable memory schema that is injected
 as structured context into every Veo / Chirp / Lyria / image generation call.
@@ -23,7 +23,7 @@ Modality = Literal["text", "image", "video", "audio"]
 
 
 class Reference(BaseModel):
-    """One grounded reference, sourced from Parallel Search (blueprint 23.2)."""
+    """One grounded reference, sourced from Parallel Search."""
     id: str = Field(default_factory=lambda: uuid4().hex)
     url: str
     title: str
@@ -68,7 +68,7 @@ class WardrobeSpec(BaseModel):
 class VoiceProfileSpec(BaseModel):
     id: str = Field(default_factory=lambda: uuid4().hex)
     character_id: str
-    voice_model: str = "gemini-3.1-flash-tts-preview"  # blueprint "Chirp 3"
+    voice_model: str = "gemini-3.1-flash-tts-preview"  #
     voice_name: str = "Charon"
     description: str = ""
 
@@ -102,9 +102,9 @@ class StoryBeat(BaseModel):
 # --------------------------------------------------------------------------- #
 
 class FilmBible(BaseModel):
-    """The top-level Film Bible (blueprint Section 23.2).
+    """The top-level Film Bible.
 
-    Versioned: every user edit creates a new immutable version (blueprint 23.3).
+    Versioned: every user edit creates a new immutable version.
     Every generation cites which Bible version it used, so drift is attributable.
     """
     version: int = 1
@@ -120,7 +120,7 @@ class FilmBible(BaseModel):
     research_references: list[Reference] = Field(default_factory=list)
 
     def bump_version(self) -> "FilmBible":
-        """Return a new immutable copy with version+1 (blueprint 23.3)."""
+        """Return a new immutable copy with version+1."""
         return self.model_copy(update={"version": self.version + 1})
 
 
@@ -144,14 +144,14 @@ class ShotSpec(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
-# Project (top-level entity, blueprint Table 33)
+# Project (top-level entity)
 # --------------------------------------------------------------------------- #
 
 ProjectStatus = Literal["created", "researching", "bible_v1", "generating", "assembled", "shared"]
 
 
 class Project(BaseModel):
-    id: str = Field(default_factory=lambda: uuid4().hex)  # 128-bit UUIDv4 (blueprint Table 39 row 4)
+    id: str = Field(default_factory=lambda: uuid4().hex)  # 128-bit UUIDv4
     logline: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     current_bible_version: int = 0  # 0 = no bible yet

@@ -1,5 +1,5 @@
 """
-Auteur — consistency check pipeline (blueprint Section 32.2 Day 9).
+Auteur — consistency check pipeline.
 
 Extracts a representative frame from each generated Veo clip (via ffmpeg),
 runs the Consistency Check Agent (Gemini 3.1 Pro vision) to compare it to the
@@ -23,7 +23,7 @@ from ..bible import store
 
 
 async def check_shot(project_id: str, shot_id: str, char_ref_png: bytes | None = None) -> dict[str, Any]:
-    """Run the Consistency Check Agent on one shot (blueprint Day 9 DoD).
+    """Run the Consistency Check Agent on one shot.
 
     1. Retrieve the generated Veo MP4 from the store.
     2. Extract a representative frame (ffmpeg @ 50% duration).
@@ -117,7 +117,7 @@ async def check_shot(project_id: str, shot_id: str, char_ref_png: bytes | None =
 
 
 async def check_all_shots(project_id: str, char_ref_png: bytes | None = None) -> dict[str, Any]:
-    """Run the Consistency Check Agent on all shots (blueprint Day 9 DoD).
+    """Run the Consistency Check Agent on all shots.
 
     Returns a summary with per-shot drift scores + the mean overall + the verdict.
     """
@@ -126,7 +126,7 @@ async def check_all_shots(project_id: str, char_ref_png: bytes | None = None) ->
     if not shots:
         return {"project_id": project_id, "status": "no_shots", "shots": []}
 
-    # Run checks concurrently (each is independent — blueprint Table 31 row 6: stateless)
+    # Run checks concurrently (each is independent: stateless)
     tasks = [check_shot(project_id, s.id, char_ref_png) for s in shots]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 

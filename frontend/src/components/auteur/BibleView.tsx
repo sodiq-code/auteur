@@ -1,5 +1,5 @@
 /**
- * BibleView — blueprint Section 30.2 row 4.
+ * BibleView row 4.
  * Tabbed: Characters | Locations | Wardrobe | Voice | Score | Style | Beats;
  * per-entry edit (inline, creates a new version via PATCH); version history.
  */

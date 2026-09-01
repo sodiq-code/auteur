@@ -1,5 +1,5 @@
 """
-Auteur — /api/projects (blueprint Table 38 rows 1-2).
+Auteur — /api/projects.
 
 POST /api/projects        — create a new project (from a logline)
 GET  /api/projects/{id}   — get project state (project + bible + shots + events)
@@ -30,7 +30,7 @@ class CreateProjectResponse(BaseModel):
 
 @router.post("", response_model=CreateProjectResponse)
 async def create_project(req: CreateProjectRequest) -> CreateProjectResponse:
-    """Create a new project from a logline (blueprint Table 38 row 1).
+    """Create a new project from a logline.
 
     The bible + shots are generated on-demand via the Director Agent (Day 6+).
     This endpoint just registers the project.
@@ -47,7 +47,7 @@ async def create_project(req: CreateProjectRequest) -> CreateProjectResponse:
 
 @router.get("/{project_id}")
 async def get_project(project_id: str) -> dict[str, Any]:
-    """Get project state (blueprint Table 38 row 2)."""
+    """Get project state."""
     project = await store.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="project not found")

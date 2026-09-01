@@ -1,5 +1,5 @@
 """
-Auteur — Cloud Storage wrapper for rendered artifacts (blueprint Table 28 row 3).
+Auteur — Cloud Storage wrapper for rendered artifacts.
 
 Renders (Veo MP4s, Chirp WAVs, Lyria WAVs, Imagen PNGs) are stored in Cloud
 Storage, not Firestore (they're too large + binary). Public share links read

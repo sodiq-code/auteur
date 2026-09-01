@@ -1,1 +1,1 @@
-"""Auteur API package — FastAPI routers (blueprint Table 38)."""
+"""Auteur API package — FastAPI routers."""

@@ -1,5 +1,5 @@
 /**
- * LandingView — blueprint Section 30.2 row 1 + Day 11 (canonical demo) + Day 12 (UX polish).
+ * LandingView row 1 + Day 11 (canonical demo) + Day 12 (UX polish).
  *
  * Loads the pre-rendered canonical demo by default (the safety net — visitors
  * see the demo instantly). The SideBySide component is the signature moment.
@@ -60,7 +60,7 @@ export function LandingView() {
           Chirp 3, Lyria 2, and Imagen 3 generation call.
         </p>
 
-        {/* SideBySide signature moment (blueprint Section 30.5) */}
+        {/* SideBySide signature moment */}
         <div className="auteur-rise mt-10" style={{ animationDelay: "0.3s" }}>
           {loading ? (
             <LoadingSkeleton rows={1} className="mx-auto max-w-2xl" />

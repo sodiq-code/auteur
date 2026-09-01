@@ -1,5 +1,5 @@
 /**
- * Auteur — shared UI state components (blueprint Section 30.4 design system).
+ * Auteur — shared UI state components.
  * Loading skeletons, empty states, error states — used across all views.
  */
 "use client";

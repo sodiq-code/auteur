@@ -1,4 +1,4 @@
-"""Auteur — /api/projects/{id}/assemble + /share + /export + /events (Table 38 rows 9-13).
+"""Auteur — /api/projects/{id}/assemble + /share + /export + /events.
 
 The assemble endpoint runs the real ffmpeg assembly pipeline (pipelines/assemble.py).
 """
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/projects/{project_id}", tags=["assembly-export"])
 
 @router.post("/assemble")
 async def assemble(project_id: str) -> dict[str, Any]:
-    """Assemble the final film (blueprint Table 38 row 9).
+    """Assemble the final film.
 
     Runs the real ffmpeg assembly: concatenates all generated Veo clips into
     a single MP4. Returns the output URL + duration + clip count.
@@ -40,9 +40,9 @@ async def assemble(project_id: str) -> dict[str, Any]:
 
 @router.post("/share")
 async def create_share_link(project_id: str) -> dict[str, Any]:
-    """Create a public share link (blueprint Table 38 row 10).
+    """Create a public share link.
 
-    Generates an 8-char random slug (~2^48 entropy, blueprint Table 39 row 7),
+    Generates an 8-char random slug (~2^48 entropy,),
     persists the slug → project_id mapping, returns the share URL.
     """
     project = await store.get_project(project_id)
@@ -55,7 +55,7 @@ async def create_share_link(project_id: str) -> dict[str, Any]:
 
 @router.get("/export/bible")
 async def export_bible(project_id: str) -> dict[str, Any]:
-    """Export the bible as JSON (blueprint Table 38 row 11)."""
+    """Export the bible as JSON."""
     bible = await store.get_bible(project_id)
     if not bible:
         raise HTTPException(status_code=404, detail="no bible to export")
@@ -64,7 +64,7 @@ async def export_bible(project_id: str) -> dict[str, Any]:
 
 @router.get("/export/shots", response_class=PlainTextResponse)
 async def export_shots_csv(project_id: str) -> str:
-    """Export the shot list as CSV (blueprint Table 38 row 12)."""
+    """Export the shot list as CSV."""
     shots = await store.get_shots(project_id)
     rows = ["order,id,status,bible_version,description"]
     for s in shots:
@@ -75,7 +75,7 @@ async def export_shots_csv(project_id: str) -> str:
 
 @router.get("/events")
 async def get_events(project_id: str) -> dict[str, Any]:
-    """Get the event log (blueprint Table 38 row 13)."""
+    """Get the event log."""
     events = await store.get_events(project_id)
     return {"project_id": project_id, "events": events, "count": len(events)}
 

@@ -1,6 +1,6 @@
 """
 Auteur — /api/projects/{id}/build-bible + /api/projects/{id}/research
-(blueprint Table 38 — the Director Agent runtime endpoints).
+.
 
 POST /api/projects/{id}/build-bible
     Runs the Director Agent at runtime:
@@ -13,7 +13,7 @@ GET /api/projects/{id}/research
     Returns the cached research references for a project (24h TTL).
 
 These are the runtime endpoints that make the partner API visible to judges
-(blueprint Section 26.3 / P670 — the #1 anti-anti-pattern mitigation).
+(transparency guarantee).
 """
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ async def build_bible(project_id: str) -> dict[str, Any]:
 
 @router.get("/research")
 async def get_research(project_id: str) -> dict[str, Any]:
-    """Get the cached research references for a project (blueprint 24.4 — 24h TTL)."""
+    """Get the cached research references for a project."""
     project = await store.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="project not found")

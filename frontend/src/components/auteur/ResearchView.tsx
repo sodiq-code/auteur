@@ -1,5 +1,5 @@
 /**
- * ResearchView — blueprint Section 30.2 row 3.
+ * ResearchView row 3.
  * Real-time search panel; query + results with URLs; progress indicator.
  *
  * Calls POST /api/projects/{id}/build-bible on the deployed Cloud Run backend,

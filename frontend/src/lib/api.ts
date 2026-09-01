@@ -1,7 +1,7 @@
 /**
- * Auteur — API client (blueprint Section 26.2, Table 38).
+ * Auteur — API client.
  *
- * Wired to the deployed Cloud Run backend. All 14 endpoints from Table 38.
+ * Wired to the deployed Cloud Run backend. All 14 endpoints.
  * Uses the XTransformPort gateway pattern for local dev (not needed in prod
  * since the backend is on its own Cloud Run URL).
  */
@@ -64,7 +64,7 @@ export async function getHealth(): Promise<HealthStatus> {
 }
 
 // --------------------------------------------------------------------------- //
-// Canonical demo (blueprint Day 11 — pre-rendered safety net)
+// Canonical demo (pre-rendered safety net)
 // --------------------------------------------------------------------------- //
 
 export interface DemoData {
@@ -89,7 +89,7 @@ export async function getDemo(): Promise<DemoData> {
 }
 
 // --------------------------------------------------------------------------- //
-// Director Agent (Table 38 — runtime endpoints)
+// Director Agent
 // --------------------------------------------------------------------------- //
 
 export interface BuildBibleResponse {
@@ -115,7 +115,7 @@ export async function getResearch(projectId: string): Promise<{
 }
 
 // --------------------------------------------------------------------------- //
-// Projects (Table 38 rows 1-2)
+// Projects
 // --------------------------------------------------------------------------- //
 
 export async function createProject(logline: string): Promise<Project> {
@@ -137,7 +137,7 @@ export async function getProject(projectId: string): Promise<ProjectState> {
 }
 
 // --------------------------------------------------------------------------- //
-// Bible (Table 38 rows 3-4)
+// Bible
 // --------------------------------------------------------------------------- //
 
 export async function getBible(projectId: string): Promise<{ bible: FilmBible; version: number }> {
@@ -157,7 +157,7 @@ export async function editBibleEntry(
 }
 
 // --------------------------------------------------------------------------- //
-// Shots (Table 38 rows 5-8)
+// Shots
 // --------------------------------------------------------------------------- //
 
 export async function getShots(projectId: string): Promise<{ shots: ShotSpec[] }> {
@@ -295,7 +295,7 @@ export async function checkAllShots(projectId: string): Promise<ConsistencyAllRe
 }
 
 // --------------------------------------------------------------------------- //
-// Assembly + Share + Export (Table 38 rows 9-13)
+// Assembly + Share + Export
 // --------------------------------------------------------------------------- //
 
 export interface AudioSummary {
@@ -345,7 +345,7 @@ export async function getEvents(projectId: string): Promise<{ project_id: string
 }
 
 // --------------------------------------------------------------------------- //
-// Public share view (Table 38 — GET /api/share/{slug})
+// Public share view
 // --------------------------------------------------------------------------- //
 
 export interface SharedProject {
