@@ -6,7 +6,7 @@
 > back to a real URL it returned. Per the partner-track rules, the call
 > site must be visible in the deployed UI at runtime.
 
-## Why this integration exists 
+## Why this integration exists
 
 The Research Agent grounds creative decisions in real-world references via
 the Parallel Search API. Every character, location, wardrobe, voice, score
@@ -19,136 +19,131 @@ Without this integration, Auteur would be a fluent liar — generating
 plausible-sounding but ungrounded period details. Parallel is the
 ground-truth layer.
 
-## The integration 
+## The integration
 
-Implemented in `backend/agents/research.py` (with the HTTP client in
-`integrations/parallel_search.py`).
+Implemented in two files:
+
+- `backend/agents/research.py` — the agentic loop. The Research Agent
+  uses **Google ADK function calling**: Gemini is given a
+  `parallel_search` tool declaration, decides what to search for, calls
+  the tool, evaluates the results, and decides whether more searches are
+  needed. This is a genuine agentic tool-use loop, not a deterministic
+  Python pipeline.
+- `backend/integrations/parallel_search.py` — the HTTP client. One
+  function, `search()`, calls the real Parallel Search API and returns
+  the raw response. `parse_references()` maps the Parallel response onto
+  the `Reference` schema.
+
+### The agentic loop
 
 ```python
-# agents/research_agent.py
-from google.adk import Agent
-from google.cloud import aiplatform
-from typing import List
-import os, httpx
+# backend/agents/research.py (simplified for clarity)
 
-class ResearchAgent(Agent):
-    """Grounds creative decisions via Parallel Search API."""
+_SEARCH_FUNCTION_DECLARATION = types.FunctionDeclaration(
+    name="parallel_search",
+    description="Search the web for real-world references using the Parallel Search API.",
+    parameters=types.Schema(
+        type="OBJECT",
+        properties={"query": types.Schema(type="STRING")},
+        required=["query"],
+    ),
+)
 
-    async def search(self, query: str, modality: str) -> List[Reference]:
-        # 1. Check cache (Firestore L4)
-        cached = await self._cache_get(query)
-        if cached:
-            return cached
-
-        # 2. Call Parallel Search API at runtime (required at runtime)
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(
-                "https://api.parallel.ai/v1/search",
-                headers={"x-api-key": os.environ["PARALLEL_API_KEY"]},
-                json={"query": query, "num": 10, "modality": modality}
-            )
-            resp.raise_for_status()
-            results = resp.json()["results"]
-
-        # 3. Synthesize via Gemini 2.5 Flash
-        synthesized = await self._gemini_synthesize(query, results)
-
-        # 4. Cache (24h TTL)
-        await self._cache_set(query, synthesized)
-
-        return synthesized
-
-    async def _gemini_synthesize(self, query: str, raw_results: list) -> List[Reference]:
-        # Gemini 2.5 Flash call with structured output
-        model = aiplatform.GenerativeModel("gemini-2.5-flash")
-        prompt = f"""You are extracting structured references for a film research query.
-Query: {query}
-Raw search results: {raw_results}
-
-Return JSON array of references, each with: url, title, snippet, image_url (if available), modality.
-Only include results directly relevant to the query."""
-        resp = await model.generate_content_async(
-            prompt,
-            generation_config={"response_mime_type": "application/json"}
+async def research_with_tools(project_id: str, logline: str) -> list[Reference]:
+    """The agent decides what to search for via function calling."""
+    for round_num in range(5):  # max 5 rounds of searching
+        resp = await gemini.pro_client().aio.models.generate_content(
+            model="gemini-3.1-pro-preview",
+            contents=contents,
+            config=types.GenerateContentConfig(tools=[_SEARCH_TOOL]),
         )
-        return [Reference(**r) for r in resp.json()]
+        # Gemini may return MULTIPLE function calls in one response
+        for part in resp.candidates[0].content.parts:
+            fc = getattr(part, "function_call", None)
+            if fc and fc.name == "parallel_search":
+                query = fc.args.get("query", "")
+                # Execute the real Parallel Search API call
+                raw = await parallel_search.search(
+                    f"Research for film: {logline}", [query], project_id=project_id,
+                )
+                refs = parallel_search.parse_references(raw)
+                # Feed the results back to Gemini so it can decide what to search next
+                ...
+        if not has_function_call:
+            break  # agent is done researching
 ```
+
+The LLM controls the research trajectory: it decides what to search, how
+many times to search, and when it has gathered enough references. Python
+just executes the tool calls and feeds results back.
 
 ### Auth
 
-- **API key** in the `x-api-key` header: `x-api-key: ${PARALLEL_API_KEY}`.
-  (The Parallel Search API uses `x-api-key`, not `Authorization: Bearer`.)
-- `PARALLEL_API_KEY` is provisioned in **Google Secret Manager** and
-  injected into the Cloud Run service as an env var at deploy time
-  .
+- **API key** in the `x-api-key` header (not `Authorization: Bearer`).
+  Set as `PARALLEL_API_KEY` in the Cloud Run service environment.
 - Server-side only. No client-side secrets — the frontend talks only to
-  our FastAPI service .
+  our FastAPI service.
 
 ### Request shape
 
-```json
+```http
 POST https://api.parallel.ai/v1/search
 x-api-key: <PARALLEL_API_KEY>
 Content-Type: application/json
 
 {
-  "query": "1892 Scottish lighthouse keeper oilskin coat",
-  "num": 10,
-  "modality": "visual"
+  "objective": "Research for film: <logline>",
+  "search_queries": [
+    "1892 Scottish lighthouse keeper oilskin coat",
+    "Skerryvore Lighthouse architecture",
+    "Victorian sea shanties"
+  ]
 }
 ```
 
-`modality` is one of `"visual"`, `"factual"`, `"audio"`, `"location"` —
-matching the `Reference.modality` enum in `docs/bible-schema.md`. The
-Research Agent formulates both the query and the modality based on the
-Director's request .
+The `objective` is the high-level research goal; `search_queries` is the
+list of specific queries the LLM generated. Both are sent in a single
+request — Parallel runs the queries and returns the combined result set.
 
 ### Response shape
 
 ```json
 {
+  "search_id": "...",
   "results": [
-    { "url": "...", "title": "...", "snippet": "...", "image_url": "..." },
-    ...
-  ]
+    {
+      "url": "https://en.wikipedia.org/wiki/Skerryvore",
+      "title": "Skerryvore - Wikipedia",
+      "publish_date": "2024-01-15",
+      "excerpts": ["Skerryvore is a remote..."]
+    }
+  ],
+  "usage": { "total_queries": 3 }
 }
 ```
 
-Raw results are then passed through Gemini 2.5 Flash synthesis to produce
-a clean `List[Reference]` (filtering out irrelevant hits, normalizing the
-schema). The synthesized list is what gets cached and what gets attached
-to a Bible entry's `references[]` field.
+`parse_references()` extracts each result and maps it onto the
+`Reference` schema: `excerpts[0]` becomes `snippet`, `modality` defaults
+to `"text"`, `publish_date` is dropped (not in the schema). The cleaned
+list is what gets cached and attached to Bible entries.
 
-## Caching 
+## Caching
 
 | Aspect | Value |
 |---|---|
-| Cache store | Firestore `search_cache/{projectId}/{queryHash}` (layer L4) |
-| TTL | **24 hours**  |
-| Read pattern | Per Research Agent call — `_cache_get(query)` before any network call |
-| Write pattern | On cache miss — `_cache_set(query, synthesized)` after a successful Parallel response |
+| Cache store | Firestore `search_cache/{projectId}/{queryHash}` |
+| TTL | **24 hours** |
+| Read pattern | `store.cache_get_search(project_id, objective)` before any network call |
+| Write pattern | `store.cache_set_search(project_id, objective, refs)` after a successful Parallel response |
 | Eviction | TTL refreshes on next query; entries are per-project, so a popular query is re-cached per project |
 
 Caching serves two purposes:
 
 1. **Cost.** Per-call Parallel pricing (TBD; estimated $1–5/month at
-   hackathon scale). Caching avoids re-searching the same
-   query when the Director loops back to the same modality.
-2. **Resilience.** If Parallel is down, the cached results are the first
-   fallback (see Failure Handling below).
-
-## Synthesis via Gemini 2.5 Flash
-
-The Director never reads raw Parallel results. The Research Agent
-synthesizes them through `gemini-2.5-flash` with structured JSON output
-(`response_mime_type: "application/json"`) into a list of `Reference`
-objects that match the `bible/schema.py` Pydantic model. This is what
-guarantees the Bible's `references[]` field is always well-typed.
-
-Why Gemini Flash and not Pro? Flash is faster and cheaper, and sufficient
-for query formulation and result synthesis. Pro would be overkill for this
-step; it is reserved for the Director and Consistency Check agents where
-the reasoning load is heavier.
+   hackathon scale). Caching avoids re-searching the same query when
+   the Director loops back to the same modality.
+2. **Resilience.** If Parallel is down, the cached results are the
+   first fallback (see Failure Handling below).
 
 ## Visibility — the transparency guarantee
 
@@ -166,74 +161,61 @@ renders:
   `↳ historic-scotland.org/...`).
 - A progress indicator while the search is in flight.
 
-This is non-negotiable for the partner track. A judge who opens the
-deployed URL, types a logline, and watches the Research Panel populate
-sees the partner API being called at runtime — not a recorded video, not
-a stubbed response. The companion UI requirement is that **the live
-generation endpoint streams a `research_started` / `research_completed`
-SSE event** so the Research Panel updates without polling (see
-`docs/api-contract.md` Row 6).
+Every tool call is also logged to the project's event trail via
+`store.log_event(project_id, "agent_tool_call", {...})` — so the
+agent's research trajectory is fully auditable after the fact.
 
-## Failure handling 
+## Failure handling
 
 | Failure | Detection | Fallback | User-visible impact |
 |---|---|---|---|
-| Parallel Search API unavailable | `httpx` timeout / 5xx | Cached search results (if any) **or** a clearly-labeled "Research unavailable — using creative inference" note | Bible still builds; fewer references |
+| Parallel Search API unavailable | `httpx` timeout / 5xx | Cached search results (if any) **or** an empty `references[]` list | Bible still builds; fewer references |
+| Function-calling loop fails | Exception in `research_with_tools()` | Falls back to `research()` (direct call with LLM-generated queries) | Same results, less agentic |
+| `PARALLEL_API_KEY` not set | `RuntimeError` from `search()` | Returns empty list, logs `research_failed` | Bible builds with `references: []` |
 
 The Director's contract is: **Research returning zero results is not a
-hard error.** It degrades gracefully:
-
-1. If a cached result exists for the query, return it (with a `cached_at`
-   timestamp shown in the UI).
-2. If no cache exists, the Research Agent returns an empty list and the
-   Director proceeds with **clearly-labeled "creative inference"** —
-   never asserted as fact . The Bible entry
-   carries a `references: []` field, and the UI shows a "no grounding
-   found" badge on that entry.
-3. The event log records `research_failed (query, error)` for audit.
+hard error.** It degrades gracefully — the Bible entry carries an empty
+`references: []` field, and the UI shows a "no grounding found" badge on
+that entry. The event log records the failure for audit.
 
 Additional resilience layers:
 
-- **Retry with exponential backoff:** max 5 retries on 429 / 5xx
-  .
-- **Per-query timeout:** 10 seconds (the `httpx.AsyncClient(timeout=10.0)`
-  in the source above). Long enough for Parallel to respond; short enough
-  that the live demo doesn't stall.
-- **Health probe:** `/api/health` returns `partner_status: "ok"` if a test
-  query completes within 10s; `"degraded"` if returning cached results
-  (see `docs/api-contract.md` Row 14). The operations runbook checks this
-  at 00:05 .
+- **Per-request timeout:** 30 seconds (`httpx.AsyncClient(timeout=30.0)`).
+  Long enough for Parallel to run multiple queries; short enough that
+  the live demo doesn't stall.
+- **Health probe:** `/api/health` reports `partner_status.parallel_search.configured: true/false`
+  based on whether the API key is set.
 
 ## Quotas and rate limits
 
-- **Parallel Search API:** per-call pricing TBD; validate in first 48 hours
-  of integration . Cache (24h TTL) is the
-  primary rate-limit mitigation.
-- **Vertex AI (for the Gemini Flash synthesis step):** standard Vertex AI
-  quota per project; retries with backoff .
+- **Parallel Search API:** per-call pricing TBD; validate in first 48
+  hours of integration. Cache (24h TTL) is the primary rate-limit
+  mitigation.
+- **Vertex AI (Gemini 3.1 Pro for the function-calling loop):** standard
+  Vertex AI quota per project.
 
-## Cost 
+## Cost
 
-- Per `logline → research complete`: ~5 Parallel queries × ~$0.001 each =
-  ~$0.01 + Gemini Flash synthesis ≈ $0.01 total .
-- Estimated monthly partner cost at normal usage: $1–5.
-  Well within the $100 Google Cloud credit budget.
+- Per `logline → research complete`: ~5 Parallel queries × ~$0.001 each
+  ≈ $0.01 + Gemini 3.1 Pro function-calling ≈ $0.02 total.
+- Estimated monthly partner cost at normal usage: $1–5. Well within
+  the $100 Google Cloud credit budget.
 
-## Stress test 
+## Stress test
 
-Test 1 : **Kill the Parallel API key; reload the app;
-verify graceful degradation.** Expected: the Research Panel shows
-"Research unavailable — using creative inference" notes on each query;
-the Bible still builds with empty `references[]` on affected entries; the
-rest of the pipeline (Veo / Chirp / Lyria / Imagen / Consistency) still
-works. This test is run before every operations submission.
+**Kill the Parallel API key; reload the app; verify graceful
+degradation.** Expected: the Research Panel shows "Research unavailable"
+notes on each query; the Bible still builds with empty `references[]`
+on affected entries; the rest of the pipeline (Veo / Chirp / Lyria /
+Imagen / Consistency) still works. This test is run before every
+operations submission.
 
 ## Cross-references
 
 - Architecture & model note: [`ARCHITECTURE.md`](../ARCHITECTURE.md).
 - REST API surface (incl. `/api/health` `partner_status`):
   [`docs/api-contract.md`](api-contract.md).
-- `Reference` Pydantic model used by the cache + synthesis:
+- `Reference` Pydantic model used by the cache + parse step:
   [`docs/bible-schema.md`](bible-schema.md).
 - Demo script showing the Research Panel in Beat 3:
   [`docs/demo-script.md`](demo-script.md).

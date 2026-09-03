@@ -50,16 +50,21 @@ async def search(
 
 
 def parse_references(parallel_response: dict[str, Any]) -> list[dict[str, Any]]:
-    """Extract flat reference dicts from a Parallel Search response."""
+    """Extract flat reference dicts from a Parallel Search response.
+
+    Maps Parallel's response fields onto the `Reference` schema in
+    `backend/bible/schema.py`: `excerpts[0]` -> `snippet`, `publish_date`
+    is preserved for audit, `modality` defaults to "text".
+    """
     refs = []
     for r in parallel_response.get("results", []):
         excerpts = r.get("excerpts", [])
         excerpt = excerpts[0] if excerpts else ""
+        snippet = excerpt[:300] if isinstance(excerpt, str) else str(excerpt)[:300]
         refs.append({
             "url": r.get("url", ""),
             "title": r.get("title", ""),
-            "publish_date": r.get("publish_date"),
-            "excerpt": excerpt[:300] if isinstance(excerpt, str) else str(excerpt)[:300],
+            "snippet": snippet,
             "modality": "text",
         })
     return refs

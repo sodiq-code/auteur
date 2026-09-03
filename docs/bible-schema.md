@@ -36,7 +36,7 @@ traces the entry back to a real URL.
 | `title` | `str` | Page or result title. |
 | `snippet` | `str` | Short excerpt returned by Parallel. |
 | `image_url` | `Optional[str]` | Image URL if the search returned one (for visual / location modalities). |
-| `modality` | `str` | One of `"visual"`, `"factual"`, `"audio"`, `"location"`. Drives which bible entry type it attaches to. |
+| `modality` | `str` | One of `"text"`, `"image"`, `"video"`, `"audio"`. Drives which bible entry type it attaches to. |
 | `retrieved_at` | `datetime` | When Parallel Search returned this result (used for cache TTL on L4). |
 
 ### `CharacterSpec`
